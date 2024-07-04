@@ -106,7 +106,7 @@ const InicioScreen = ({ navigation }) => {
         </View>
 
         {/* Content */}
-        <ScrollView contentContainerStyle={[styles.contentContainer, { paddingBottom: 50 }]} /* Ajusta este valor según el tamaño de tu barra de navegación */>
+        <ScrollView contentContainerStyle={styles.contentContainer}>
           {renderContent()}
         </ScrollView>
 
@@ -179,6 +179,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 20,
+    paddingBottom: 100, // Ajusta este valor según el tamaño de tu barra de navegación
   },
   post: {
     marginBottom: 20,
@@ -207,7 +208,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 20,
-    bottom: 50,
+    bottom: 70,
     backgroundColor: '#6a1b9a',
     width: 56,
     height: 56,
@@ -216,11 +217,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   footer: {
+    position: 'fixed',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    marginBottom: 0,
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingVertical: 10,
     borderTopWidth: 1,
     borderColor: '#ddd',
+    backgroundColor: '#fff',
+    elevation: 8, // Para Android
+    zIndex: 8, // Para iOS
   },
 });
 
