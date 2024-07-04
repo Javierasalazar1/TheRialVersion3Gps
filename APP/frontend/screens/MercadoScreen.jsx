@@ -92,7 +92,9 @@ const MercadoScreen = () => {
           <Ionicons name="ellipsis-vertical" size={22} color="black" />
         </TouchableOpacity>
         </View>
+        <View style={styles.ima}>
       <Image source={{ uri: item.imagen }} style={styles.image} />
+      </View>
       <Text style={styles.title}>{item.nombre}</Text>
       <View style={styles.header}>
       <Text style={styles.userEmail}>{item.detalle}</Text>
@@ -127,7 +129,8 @@ const MercadoScreen = () => {
         onEndReached={fetchMorePublicaciones}
         onEndReachedThreshold={0.5}
         ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#0000ff" />}
-        contentContainerStyle={styles.flatlistContent}
+        contentContainerStyle={{ flexGrow: 1 }}
+  style={{ flex: 1 }}
       />
     </View>
   );
@@ -137,7 +140,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
-    marginBottom: 50, // Ajusta este valor según el tamaño de tu barra de navegación en InicioScreen
   },
   loadingContainer: {
     flex: 1,
@@ -173,6 +175,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  ima: {
+    flexDirection: 'center',
+    alignItems: 'center',
+  },
   date: {
     fontSize: 12,
     color: 'gray',
@@ -196,14 +202,11 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   image: {
-    width: '100%',
+    width: '50%',
     height: 100, // Tamaño fijo más pequeño
     borderRadius: 10,
     marginTop: 10,
     marginBottom: 10,
-  },
-  flatlistContent: {
-    paddingBottom: 50, // Ajusta este valor según el tamaño de tu barra de navegación en InicioScreen
   },
 });
 

@@ -105,16 +105,17 @@ const InicioScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* Content */}
-        <ScrollView contentContainerStyle={[styles.contentContainer, { paddingBottom: 50 }]} /* Ajusta este valor según el tamaño de tu barra de navegación */>
-          {renderContent()}
-        </ScrollView>
 
         {/* Add Button */}
         <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('CrearPublicacion')}>
           <FontAwesome5 name="plus" size={24} color="white" />
         </TouchableOpacity>
 
+        <View style={{ flex: 1 }}> 
+        {/* Content */}
+        <ScrollView contentContainerStyle={styles.contentContainer} style={{ flex: 1 }}>
+          {renderContent()}
+        </ScrollView>
         {/* Footer */}
         <View style={styles.footer}>
           <TouchableOpacity onPress={() => setSelectedScreen('Avisos')}>
@@ -127,6 +128,8 @@ const InicioScreen = ({ navigation }) => {
             <FontAwesome5 name="shopping-cart" size={24} color={selectedScreen === 'Mercado' ? 'tomato' : 'black'} />
           </TouchableOpacity>
         </View>
+        </View>
+
       </View>
     </MenuProvider>
   );
@@ -178,7 +181,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   contentContainer: {
-    padding: 20,
+    flexGrow: 1,
   },
   post: {
     marginBottom: 20,
@@ -207,20 +210,30 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 20,
-    bottom: 50,
+    bottom: 70, // Ajusta este valor para que esté justo encima del footer
     backgroundColor: '#6a1b9a',
     width: 56,
     height: 56,
     borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
+    elevation: 8, // Para Android
+    zIndex: 8, // Para iOS
   },
   footer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    marginBottom: 0,
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingVertical: 10,
     borderTopWidth: 1,
     borderColor: '#ddd',
+    backgroundColor: '#fff',
+    elevation: 8, // Para Android
+    zIndex: 8, // Para iOS
   },
 });
 
