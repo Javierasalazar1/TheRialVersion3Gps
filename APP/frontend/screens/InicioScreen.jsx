@@ -111,9 +111,8 @@ const InicioScreen = ({ navigation }) => {
           <FontAwesome5 name="plus" size={24} color="white" />
         </TouchableOpacity>
 
-        <View style={{ flex: 1 }}> 
         {/* Content */}
-        <ScrollView contentContainerStyle={styles.contentContainer} style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={styles.contentContainer} >
           {renderContent()}
         </ScrollView>
         {/* Footer */}
@@ -127,7 +126,6 @@ const InicioScreen = ({ navigation }) => {
           <TouchableOpacity onPress={() => setSelectedScreen('Mercado')}>
             <FontAwesome5 name="shopping-cart" size={24} color={selectedScreen === 'Mercado' ? 'tomato' : 'black'} />
           </TouchableOpacity>
-        </View>
         </View>
 
       </View>
@@ -182,7 +180,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flexGrow: 1,
-    overflow: 'scroll',
+    marginBottom: 10,
   },
   post: {
     marginBottom: 20,
@@ -209,7 +207,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   fab: {
-    position: 'absolute',
+    position: 'fixed',
     right: 20,
     bottom: 70, // Ajusta este valor para que esté justo encima del footer
     backgroundColor: '#6a1b9a',
