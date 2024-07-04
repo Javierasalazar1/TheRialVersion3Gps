@@ -27,6 +27,8 @@ const app = initializeApp(firebaseConfig);
 const firestore = getFirestore(app);
 
 const InicioScreen = ({ navigation }) => {
+
+  
   const [posts, setPosts] = useState([]);
   const [search, setSearch] = useState('');
   const [selectedScreen, setSelectedScreen] = useState('Avisos');
@@ -126,9 +128,11 @@ const InicioScreen = ({ navigation }) => {
           <TouchableOpacity onPress={() => setSelectedScreen('Mercado')}>
             <FontAwesome5 name="shopping-cart" size={24} color={selectedScreen === 'Mercado' ? 'tomato' : 'black'} />
           </TouchableOpacity>
+          
         </View>
       </View>
     </MenuProvider>
+    
   );
 };
 
@@ -216,7 +220,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  footer: {
+footer: {
     position: 'fixed',
     left: 0,
     right: 0,
