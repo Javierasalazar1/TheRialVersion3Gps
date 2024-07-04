@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#eee',
     borderRadius: 5,
-    margin: 20,
+    margin: 10,
     padding: 10,
     alignItems: 'center',
   },
@@ -182,6 +182,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flexGrow: 1,
+    overflow: 'scroll',
   },
   post: {
     marginBottom: 20,
@@ -221,7 +222,7 @@ const styles = StyleSheet.create({
     zIndex: 8, // Para iOS
   },
   footer: {
-    position: 'absolute',
+    position: 'fixed',
     left: 0,
     right: 0,
     bottom: 0,
