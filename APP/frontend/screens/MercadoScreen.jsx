@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs } from 'firebase/firestore';
+import { View, Text, StyleSheet, FlatList, Image, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
+import { Menu, MenuOptions, MenuOption, MenuTrigger, MenuProvider } from 'react-native-popup-menu';
 
 const PAGE_SIZE = 10;
 
@@ -84,21 +85,44 @@ const MercadoScreen = () => {
     }
   };
 
+  const handleEditPost = (postId) => {
+    // Implementa la funcionalidad de edición aquí
+    console.log('Editar publicación con ID:', postId);
+  };
+
+  const handleDeletePost = async (postId) => {
+    try {
+      const db = getFirestore();
+      await deleteDoc(doc(db, 'Mercado', postId));
+      Alert.alert('Publicación eliminada', 'La publicación ha sido eliminada con éxito.');
+      fetchPublicaciones(); // Vuelve a cargar las publicaciones después de eliminar
+    } catch (error) {
+      console.error('Error eliminando publicación:', error);
+      Alert.alert('Error', 'Hubo un problema al eliminar la publicación.');
+    }
+  };
+
   const renderItem = ({ item }) => (
     <View style={styles.item}>
-       <View style={styles.header}>
-      <Text style={styles.name}>{item.usuario}</Text>
-        <TouchableOpacity onPress={() => {/* Implementar funcionalidad del botón aquí */}}>
-          <Ionicons name="ellipsis-vertical" size={22} color="black" />
-        </TouchableOpacity>
-        </View>
-        <View style={styles.ima}>
-      <Image source={{ uri: item.imagen }} style={styles.image} />
+      <View style={styles.header}>
+        <Text style={styles.name}>{item.usuario}</Text>
+        <Menu>
+          <MenuTrigger>
+            <Ionicons name="ellipsis-vertical" size={22} color="black" />
+          </MenuTrigger>
+          <MenuOptions>
+            <MenuOption onSelect={() => handleEditPost(item.id)} text='Editar' />
+            <MenuOption onSelect={() => handleDeletePost(item.id)} text='Eliminar' />
+          </MenuOptions>
+        </Menu>
+      </View>
+      <View style={styles.ima}>
+        <Image source={{ uri: item.imagen }} style={styles.image} />
       </View>
       <Text style={styles.title}>{item.nombre}</Text>
       <View style={styles.header}>
-      <Text style={styles.userEmail}>{item.detalle}</Text>
-      <Text style={styles.date}>{item.fecha}</Text>
+        <Text style={styles.userEmail}>{item.detalle}</Text>
+        <Text style={styles.date}>{item.fecha}</Text>
       </View>
     </View>
   );
@@ -121,18 +145,20 @@ const MercadoScreen = () => {
   }
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={publicaciones}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
-        onEndReached={fetchMorePublicaciones}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#0000ff" />}
-        contentContainerStyle={{ flexGrow: 1 }}
-  style={{ flex: 1 }}
-      />
-    </View>
+    <MenuProvider>
+      <View style={styles.container}>
+        <FlatList
+          data={publicaciones}
+          renderItem={renderItem}
+          keyExtractor={item => item.id}
+          onEndReached={fetchMorePublicaciones}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#0000ff" />}
+          contentContainerStyle={{ flexGrow: 1 }}
+          style={{ flex: 1 }}
+        />
+      </View>
+    </MenuProvider>
   );
 };
 
@@ -176,13 +202,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   ima: {
-    flexDirection: 'center',
     alignItems: 'center',
   },
   date: {
     fontSize: 12,
     color: 'gray',
-    },
+  },
   name: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -207,6 +232,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginTop: 10,
     marginBottom: 10,
+  },
+  menuOption: {
+    padding: 10,
   },
 });
 
