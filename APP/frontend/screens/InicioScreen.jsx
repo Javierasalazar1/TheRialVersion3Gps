@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { StyleSheet, Text, TextInput, View, TouchableOpacity, Image, ScrollView } from 'react-native';
+import React, { useState, useEffect, useContext, useRef  } from 'react';
+import { StyleSheet, Text, TextInput, View, TouchableOpacity, Image, ScrollView, Animated  } from 'react-native';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
@@ -8,7 +8,6 @@ import { AuthContext } from '../AuthContext';
 import AvisosScreen from './AvisosScreen';
 import PublicacionesScreen from './PublicacionesScreen';
 import MercadoScreen from './MercadoScreen';
-import CrearPublicacionScreen from './CrearPublicacionScreen';
 
 // Tu configuración de Firebase
 const firebaseConfig = {
@@ -31,6 +30,7 @@ const InicioScreen = ({ navigation }) => {
   const [search, setSearch] = useState('');
   const [selectedScreen, setSelectedScreen] = useState('Avisos');
   const { logout } = useContext(AuthContext);
+  const menuAnimation = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     fetchPosts();
@@ -69,6 +69,32 @@ const InicioScreen = ({ navigation }) => {
     navigation.navigate('Login');
   };
 
+  const toggleMenu = () => {
+    Animated.timing(menuAnimation, {
+      toValue: menuAnimation._value === 0 ? 1 : 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeMenu = () => {
+    Animated.timing(menuAnimation, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const navigateToScreen = (screenName) => {
+    navigation.navigate(screenName);
+    closeMenu();
+  };
+
+  const menuHeight = menuAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 180], // Ajusta la altura del menú desplegable según necesites
+  });
+
   return (
     <MenuProvider>
       <View style={styles.container}>
@@ -105,15 +131,29 @@ const InicioScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* Content */}
-        <ScrollView contentContainerStyle={[styles.contentContainer, { paddingBottom: 50 }]} /* Ajusta este valor según el tamaño de tu barra de navegación */>
+           {/* Content */}
+           <ScrollView contentContainerStyle={styles.contentContainer} >
           {renderContent()}
         </ScrollView>
-
-        {/* Add Button */}
-        <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('CrearPublicacion')}>
+     {/* Add Button */}
+     <TouchableOpacity style={styles.fab} onPress={toggleMenu}>
           <FontAwesome5 name="plus" size={24} color="white" />
         </TouchableOpacity>
+
+        {/* Animated Menu */}
+        <Animated.View style={[styles.menuContainer, { height: menuHeight }]}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('CrearAviso')}>
+            <Text style={styles.menuText}>Avisos</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('CrearPublicacion')}>
+            <Text style={styles.menuText}>Publicaciones</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('CrearMercado')}>
+            <Text style={styles.menuText}>Market</Text>
+          </TouchableOpacity>
+        </Animated.View>
+
+     
 
         {/* Footer */}
         <View style={styles.footer}>
@@ -146,6 +186,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+ 
   headerText: {
     color: 'white',
     fontSize: 20,
@@ -166,7 +207,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#eee',
     borderRadius: 5,
-    margin: 20,
+    margin: 10,
     padding: 10,
     alignItems: 'center',
   },
@@ -178,7 +219,8 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   contentContainer: {
-    padding: 20,
+    flexGrow: 1,
+    marginBottom: 10,
   },
   post: {
     marginBottom: 20,
@@ -205,22 +247,50 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   fab: {
-    position: 'absolute',
+    position: 'fixed',
     right: 20,
-    bottom: 50,
+    bottom: 70,
     backgroundColor: '#6a1b9a',
     width: 56,
     height: 56,
     borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
+    elevation: 8,
+    zIndex: 8,
+  },
+  menuContainer: {
+    position: 'absolute',
+    right: 20,
+    bottom: 120,
+    backgroundColor: '#fff',
+    width: 120,
+    borderRadius: 10,
+    overflow: 'hidden',
+    elevation: 5,
+    paddingHorizontal: 10,
+  },
+  menuItem: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  menuText: {
+    fontSize: 16,
   },
   footer: {
+    position: 'fixed',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    marginBottom: 0,
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingVertical: 10,
     borderTopWidth: 1,
     borderColor: '#ddd',
+    backgroundColor: '#fff',
+    elevation: 8, // Para Android
+    zIndex: 8, // Para iOS
   },
 });
 

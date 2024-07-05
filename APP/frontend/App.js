@@ -75,19 +75,35 @@ const LoginScreen = ({ navigation }) => {
   );
 }
 
-export default function App() {
+const App = () => {
   return (
-    <AuthProvider>
-      <NavigationContainer>
-        <Stack.Navigator>
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Inicio" component={InicioScreen} />
-          <Stack.Screen name="CrearPublicacion" component={CrearPublicacionScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </AuthProvider>
+    <>
+      <style>
+        {`
+          body, html {
+            height: 100%;
+            margin: 0;
+            overflow: auto; /* Permitir scroll en todo el cuerpo */
+          }
+          #root {
+            height: 100%;
+          }
+        `}
+      </style>
+      <AuthProvider>
+        <NavigationContainer>
+          <Stack.Navigator>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Inicio" component={InicioScreen} />
+            <Stack.Screen name="CrearPublicacion" component={CrearPublicacionScreen} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </AuthProvider>
+    </>
   );
 }
+
+export default App;
 
 const styles = StyleSheet.create({
   container: {
