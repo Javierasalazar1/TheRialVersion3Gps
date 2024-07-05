@@ -1,155 +1,200 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Image, Button, StyleSheet } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Image, TextInput, ScrollView, ActivityIndicator } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { initializeApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-
-const firebaseConfig = {
-    apiKey: "AIzaSyDK71FGurfMwk2XbZ3UwzdC-uTHegEZkj4",
-    authDomain: "gps2024-119de.firebaseapp.com",
-    databaseURL: "https://gps2024-119de-default-rtdb.firebaseio.com",
-    projectId: "gps2024-119de",
-    storageBucket: "gps2024-119de.appspot.com",
-    messagingSenderId: "816992076661",
-    appId: "1:816992076661:web:e715cd65134c743dcc493c",
-    measurementId: "G-VXR027HFXL"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const firestore = getFirestore(app);
-const storage = getStorage(app);
+import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import { uploadFileToStorage } from '../firebasestorage'; // Asegúrate de que esta función esté correctamente implementada
 
 const PerfilScreen = () => {
-  const [user, setUser] = useState(null);
+  const [image, setImage] = useState(null);
   const [nombre, setNombre] = useState('');
   const [telefono, setTelefono] = useState('');
-  const [foto, setFoto] = useState(null);
+  const [correo, setCorreo] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        fetchUserData(currentUser.uid);
+    const auth = getAuth();
+    const user = auth.currentUser;
+    setCurrentUser(user);
+
+    if (user) {
+      setCorreo(user.email);
+      fetchUserProfile(user.uid);
+    }
+
+    (async () => {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Se necesita permiso para acceder a la galería de imágenes.');
       }
-    });
-    return () => unsubscribe();
+    })();
   }, []);
 
-  const fetchUserData = async (userId) => {
+  const fetchUserProfile = async (userId) => {
     try {
-      const userDocRef = doc(firestore, 'users', userId);
-      const userDocSnap = await getDoc(userDocRef);
-      if (userDocSnap.exists()) {
-        const userData = userDocSnap.data();
-        setUser(userData);
-        setNombre(userData.nombre || '');
-        setTelefono(userData.telefono || '');
-        setFoto(userData.foto || null);
+      const db = getFirestore();
+      const userDoc = await getDoc(doc(db, 'users', userId));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        setNombre(userData.nombre);
+        setTelefono(userData.telefono);
+        setImage(userData.image);
       }
+      setInitializing(false);
     } catch (error) {
-      console.error('Error al obtener datos del usuario:', error);
+      console.error('Error al obtener el perfil del usuario:', error);
+      setInitializing(false);
     }
   };
 
   const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
+    let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
 
-    if (!result.canceled) {
-      setFoto(result.assets[0].uri);
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setImage(result.assets[0].uri);
     }
   };
 
-  const actualizarPerfil = async () => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return;
+  const handleUpdateProfile = async () => {
+    if (!nombre || !telefono) {
+      alert('Por favor completa todos los campos.');
+      return;
+    }
 
+    setLoading(true);
     try {
-      let fotoUrl = foto;
-      if (foto && foto.startsWith('file://')) {
-        const response = await fetch(foto);
-        const blob = await response.blob();
-        const storageRef = ref(storage, `perfil/${currentUser.uid}`);
-        await uploadBytes(storageRef, blob);
-        fotoUrl = await getDownloadURL(storageRef);
+      const db = getFirestore();
+      let imageUrl = image;
+
+      if (image && image.startsWith('file')) {
+        try {
+          imageUrl = await uploadFileToStorage({
+            uri: image,
+            name: `${Date.now()}.jpg`,
+            type: 'image/jpeg'
+          });
+          console.log('Image URL:', imageUrl);
+        } catch (imageError) {
+          console.error('Error al subir la imagen:', imageError);
+          throw new Error('Error al subir la imagen: ' + imageError.message);
+        }
       }
 
-      const userDocRef = doc(firestore, 'users', currentUser.uid);
-      await updateDoc(userDocRef, {
+      await setDoc(doc(db, 'users', currentUser.uid), {
         nombre,
         telefono,
-        foto: fotoUrl,
+        image: imageUrl,
+        email: currentUser.email
       });
 
-      alert('Perfil actualizado con éxito');
+      setLoading(false);
+      alert('Perfil actualizado con éxito!');
     } catch (error) {
       console.error('Error al actualizar el perfil:', error);
-      alert('Error al actualizar el perfil');
+      setLoading(false);
+      alert('Hubo un error al actualizar el perfil: ' + error.message);
     }
   };
 
-  if (!user) {
-    return <Text>Cargando...</Text>;
+  if (initializing) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#6a1b9a" />
+      </View>
+    );
   }
 
   return (
-    <View style={styles.container}>
-      <Image source={{ uri: foto || 'https://via.placeholder.com/150' }} style={styles.foto} />
-      <Button title="Cambiar foto" onPress={pickImage} />
-
-      <Text style={styles.label}>Correo:</Text>
-      <Text>{user.email}</Text>
-
-      <Text style={styles.label}>Nombre:</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+        {image ? (
+          <Image source={{ uri: image }} style={styles.image} />
+        ) : (
+          <Text style={styles.uploadText}>Selecciona una imagen</Text>
+        )}
+      </TouchableOpacity>
       <TextInput
         style={styles.input}
+        placeholder="Nombre"
         value={nombre}
         onChangeText={setNombre}
-        placeholder="Ingrese su nombre"
       />
-
-      <Text style={styles.label}>Teléfono:</Text>
       <TextInput
         style={styles.input}
+        placeholder="Correo"
+        value={correo}
+        editable={false} // El correo no es editable
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Teléfono"
         value={telefono}
         onChangeText={setTelefono}
-        placeholder="Ingrese su teléfono"
         keyboardType="phone-pad"
       />
-
-      <Button title="Actualizar perfil" onPress={actualizarPerfil} />
-    </View>
+      <TouchableOpacity style={styles.updateButton} onPress={handleUpdateProfile} disabled={loading}>
+        {loading ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <Text style={styles.updateButtonText}>Actualizar Perfil</Text>
+        )}
+      </TouchableOpacity>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
+    alignItems: 'center',
     padding: 20,
   },
-  foto: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    alignSelf: 'center',
+  imagePicker: {
+    width: '100%',
+    height: 200,
+    backgroundColor: '#eee',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 20,
   },
-  label: {
-    fontWeight: 'bold',
-    marginTop: 10,
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  uploadText: {
+    fontSize: 16,
+    color: 'gray',
   },
   input: {
+    width: '100%',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#ccc',
+    borderRadius: 5,
     padding: 10,
-    marginBottom: 10,
+    marginBottom: 20,
+  },
+  updateButton: {
+    backgroundColor: '#6a1b9a',
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+  },
+  updateButtonText: {
+    color: 'white',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
