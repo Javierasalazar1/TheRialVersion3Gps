@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
-import { StyleSheet, Text, TextInput, View, TouchableOpacity, Image, ScrollView, Animated } from 'react-native';
+
+import React, { useState, useEffect, useContext, useRef  } from 'react';
+import { StyleSheet, Text, TextInput, View, TouchableOpacity, Image, ScrollView, Animated , Pressable  } from 'react-native';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
@@ -92,7 +93,7 @@ const InicioScreen = ({ navigation }) => {
 
   const menuHeight = menuAnimation.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 180], // Ajusta la altura del menú desplegable según necesites
+    outputRange: [0, 150], // Ajusta la altura del menú desplegable según necesites
   });
 
   return (
@@ -131,8 +132,10 @@ const InicioScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* Content */}
-        <ScrollView contentContainerStyle={styles.contentContainer}>
+
+           {/* Content */}
+        <ScrollView contentContainerStyle={styles.contentContainer} >
+
           {renderContent()}
         </ScrollView>
 
@@ -258,15 +261,16 @@ const styles = StyleSheet.create({
     zIndex: 8,
   },
   menuContainer: {
-    position: 'absolute',
+    position: 'fixed',
     right: 20,
-    bottom: 120,
+    bottom: 130,
     backgroundColor: '#fff',
     width: 120,
     borderRadius: 10,
     overflow: 'hidden',
     elevation: 5,
     paddingHorizontal: 10,
+    zIndex: 8,
   },
   menuItem: {
     paddingVertical: 12,
