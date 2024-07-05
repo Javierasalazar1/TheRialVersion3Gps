@@ -11,6 +11,7 @@ import CrearPublicacionScreen from './screens/CrearPublicacionScreen';
 import CrearAviso from './screens/CrearAviso';
 import CrearMercado from './screens/CrearMercado';
 
+
 const firebaseConfig = {
   apiKey: "AIzaSyDK71FGurfMwk2XbZ3UwzdC-uTHegEZkj4",
   authDomain: "gps2024-119de.firebaseapp.com",
@@ -98,7 +99,9 @@ const App = () => {
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Inicio" component={InicioScreen} />
             <Stack.Screen name="CrearPublicacion" component={CrearPublicacionScreen} />
+
             <Stack.Screen name="CrearMercado" component={CrearMercado} />
+            <Stack.Screen name="CrearAviso" component={CrearAviso} />
           </Stack.Navigator>
         </NavigationContainer>
       </AuthProvider>
