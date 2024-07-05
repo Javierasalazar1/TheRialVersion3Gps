@@ -8,6 +8,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { AuthProvider } from './AuthContext';
 import InicioScreen from './screens/InicioScreen';
 import CrearPublicacionScreen from './screens/CrearPublicacionScreen';
+import CrearAvisoScreen from './screens/CrearAvisoScreen';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDK71FGurfMwk2XbZ3UwzdC-uTHegEZkj4",
@@ -96,6 +97,7 @@ const App = () => {
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Inicio" component={InicioScreen} />
             <Stack.Screen name="CrearPublicacion" component={CrearPublicacionScreen} />
+            <Stack.Screen name="CrearAviso" component={CrearAvisoScreen} />
           </Stack.Navigator>
         </NavigationContainer>
       </AuthProvider>
