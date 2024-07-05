@@ -76,7 +76,7 @@ const LoginScreen = ({ navigation }) => {
   );
 }
 
-const App = () => {
+const Root = () => {
   return (
     <>
       <style>
@@ -97,7 +97,6 @@ const App = () => {
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Inicio" component={InicioScreen} />
             <Stack.Screen name="CrearPublicacion" component={CrearPublicacionScreen} />
-            <Stack.Screen name="CrearAviso" component={CrearAvisoScreen} />
           </Stack.Navigator>
         </NavigationContainer>
       </AuthProvider>
@@ -105,7 +104,7 @@ const App = () => {
   );
 }
 
-export default App;
+export default Root;
 
 const styles = StyleSheet.create({
   container: {

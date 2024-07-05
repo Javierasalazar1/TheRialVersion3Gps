@@ -26,6 +26,8 @@ const app = initializeApp(firebaseConfig);
 const firestore = getFirestore(app);
 
 const InicioScreen = ({ navigation }) => {
+
+  
   const [posts, setPosts] = useState([]);
   const [search, setSearch] = useState('');
   const [selectedScreen, setSelectedScreen] = useState('Avisos');
@@ -131,8 +133,8 @@ const InicioScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-           {/* Content */}
-           <ScrollView contentContainerStyle={styles.contentContainer} >
+        {/* Content */}
+        <ScrollView contentContainerStyle={styles.contentContainer}>
           {renderContent()}
         </ScrollView>
      {/* Add Button */}
@@ -166,9 +168,11 @@ const InicioScreen = ({ navigation }) => {
           <TouchableOpacity onPress={() => setSelectedScreen('Mercado')}>
             <FontAwesome5 name="shopping-cart" size={24} color={selectedScreen === 'Mercado' ? 'tomato' : 'black'} />
           </TouchableOpacity>
+          
         </View>
       </View>
     </MenuProvider>
+    
   );
 };
 
@@ -219,8 +223,8 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   contentContainer: {
-    flexGrow: 1,
-    marginBottom: 10,
+    padding: 20,
+    paddingBottom: 100, // Ajusta este valor según el tamaño de tu barra de navegación
   },
   post: {
     marginBottom: 20,
@@ -277,7 +281,7 @@ const styles = StyleSheet.create({
   menuText: {
     fontSize: 16,
   },
-  footer: {
+footer: {
     position: 'fixed',
     left: 0,
     right: 0,
