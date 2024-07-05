@@ -9,6 +9,7 @@ import { AuthProvider } from './AuthContext';
 import InicioScreen from './screens/InicioScreen';
 import CrearPublicacionScreen from './screens/CrearPublicacionScreen';
 import CrearAvisoScreen from './screens/CrearAvisoScreen';
+import PerfilScreen from './screens/PerfilScreen';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDK71FGurfMwk2XbZ3UwzdC-uTHegEZkj4",
@@ -98,6 +99,7 @@ const App = () => {
             <Stack.Screen name="Inicio" component={InicioScreen} />
             <Stack.Screen name="CrearPublicacion" component={CrearPublicacionScreen} />
             <Stack.Screen name="CrearAviso" component={CrearAvisoScreen} />
+            <Stack.Screen name="Perfil" component={PerfilScreen} />
           </Stack.Navigator>
         </NavigationContainer>
       </AuthProvider>

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useContext, useRef  } from 'react';
-import { StyleSheet, Text, TextInput, View, TouchableOpacity, Image, ScrollView, Animated  } from 'react-native';
+import React, { useState, useEffect, useContext, useRef } from 'react';
+import { StyleSheet, Text, TextInput, View, TouchableOpacity, Image, ScrollView, Animated } from 'react-native';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
@@ -110,7 +110,7 @@ const InicioScreen = ({ navigation }) => {
                 <Image source={require('../assets/user.png')} style={styles.profileIcon} />
               </MenuTrigger>
               <MenuOptions>
-                <MenuOption onSelect={() => alert('Mi Perfil')} text='Mi Perfil' />
+                <MenuOption onSelect={() => navigation.navigate('Perfil')} text='Mi Perfil' />
                 <MenuOption onSelect={handleLogout} text='Cerrar Sesión' />
               </MenuOptions>
             </Menu>
@@ -131,12 +131,13 @@ const InicioScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-           {/* Content */}
-           <ScrollView contentContainerStyle={styles.contentContainer} >
+        {/* Content */}
+        <ScrollView contentContainerStyle={styles.contentContainer}>
           {renderContent()}
         </ScrollView>
-     {/* Add Button */}
-     <TouchableOpacity style={styles.fab} onPress={toggleMenu}>
+
+        {/* Add Button */}
+        <TouchableOpacity style={styles.fab} onPress={toggleMenu}>
           <FontAwesome5 name="plus" size={24} color="white" />
         </TouchableOpacity>
 
@@ -152,8 +153,6 @@ const InicioScreen = ({ navigation }) => {
             <Text style={styles.menuText}>Market</Text>
           </TouchableOpacity>
         </Animated.View>
-
-     
 
         {/* Footer */}
         <View style={styles.footer}>
@@ -186,7 +185,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
- 
   headerText: {
     color: 'white',
     fontSize: 20,
