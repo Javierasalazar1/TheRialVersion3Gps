@@ -2,16 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image, TextInput, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { uploadFileToStorage } from '../firebasestorage';
 import { getAuth } from 'firebase/auth';
-
-console.log('uploadFileToStorage:', uploadFileToStorage);
+import { uploadFileToStorage } from '../firebasestorage'; // Asegúrate de que esta función esté correctamente implementada
 
 const CrearAvisoScreen = () => {
   const [image, setImage] = useState(null);
-  const [nombre, setNombre] = useState('');
-  const [detalle, setDetalle] = useState('');
+  const [titulo, setTitulo] = useState('');
+  const [contenido, setContenido] = useState('');
   const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
@@ -41,7 +38,7 @@ const CrearAvisoScreen = () => {
   };
 
   const handleUpload = async () => {
-    if (!nombre || !detalle ) {
+    if (!titulo || !contenido) {
       alert('Por favor completa todos los campos.');
       return;
     }
@@ -71,11 +68,9 @@ const CrearAvisoScreen = () => {
       }
   
       const docRef = await addDoc(collection(db, 'avisos'), {
-        nombre,
-        detalle,
-        categoria,
+        titulo,
+        contenido,
         fecha: new Date().toISOString(),
-        like: 0,
         imagen: imageUrl,
         userId: currentUser.uid,
       });
@@ -83,11 +78,10 @@ const CrearAvisoScreen = () => {
       console.log('Documento agregado con ID: ', docRef.id);
   
       setImage(null);
-      setNombre('');
-      setDetalle('');
-      setCategoria('');
+      setTitulo('');
+      setContenido('');
       setLoading(false);
-      alert('Aviso subido con exito!');
+      alert('Aviso subido con éxito!');
     } catch (error) {
       console.error('Error al subir la publicación:', error);
       setLoading(false);
@@ -106,20 +100,20 @@ const CrearAvisoScreen = () => {
       </TouchableOpacity>
       <TextInput
         style={styles.input}
-        placeholder="Nombre"
-        value={nombre}
-        onChangeText={setNombre}
+        placeholder="Título"
+        value={titulo}
+        onChangeText={setTitulo}
       />
       <TextInput
         style={styles.input}
-        placeholder="Detalle"
-        value={detalle}
-        onChangeText={setDetalle}
+        placeholder="Contenido"
+        value={contenido}
+        onChangeText={setContenido}
         multiline
       />
     
       <TouchableOpacity style={styles.uploadButton} onPress={handleUpload} disabled={loading}>
-        <Text style={styles.uploadButtonText}>Subir Publicación</Text>
+        <Text style={styles.uploadButtonText}>Subir Aviso</Text>
       </TouchableOpacity>
     </ScrollView>
   );
