@@ -8,7 +8,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { AuthProvider } from './AuthContext';
 import InicioScreen from './screens/InicioScreen';
 import CrearPublicacionScreen from './screens/CrearPublicacionScreen';
-import CrearAviso from './screens/CrearAviso';
+import CrearAviso from './screens/CrearAvisoScreen';
 import CrearMercado from './screens/CrearMercado';
 
 
