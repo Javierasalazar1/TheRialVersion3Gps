@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { StyleSheet, Text, TextInput, View, TouchableOpacity, Image, ScrollView } from 'react-native';
+import React, { useState, useEffect, useContext, useRef  } from 'react';
+import { StyleSheet, Text, TextInput, View, TouchableOpacity, Image, ScrollView, Animated  } from 'react-native';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
@@ -8,7 +8,6 @@ import { AuthContext } from '../AuthContext';
 import AvisosScreen from './AvisosScreen';
 import PublicacionesScreen from './PublicacionesScreen';
 import MercadoScreen from './MercadoScreen';
-import CrearPublicacionScreen from './CrearPublicacionScreen';
 
 // Tu configuración de Firebase
 const firebaseConfig = {
@@ -31,6 +30,7 @@ const InicioScreen = ({ navigation }) => {
   const [search, setSearch] = useState('');
   const [selectedScreen, setSelectedScreen] = useState('Avisos');
   const { logout } = useContext(AuthContext);
+  const menuAnimation = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     fetchPosts();
@@ -69,6 +69,32 @@ const InicioScreen = ({ navigation }) => {
     navigation.navigate('Login');
   };
 
+  const toggleMenu = () => {
+    Animated.timing(menuAnimation, {
+      toValue: menuAnimation._value === 0 ? 1 : 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeMenu = () => {
+    Animated.timing(menuAnimation, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const navigateToScreen = (screenName) => {
+    navigation.navigate(screenName);
+    closeMenu();
+  };
+
+  const menuHeight = menuAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 180], // Ajusta la altura del menú desplegable según necesites
+  });
+
   return (
     <MenuProvider>
       <View style={styles.container}>
@@ -105,16 +131,30 @@ const InicioScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-
-        {/* Add Button */}
-        <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('CrearPublicacion')}>
+           {/* Content */}
+           <ScrollView contentContainerStyle={styles.contentContainer} >
+          {renderContent()}
+        </ScrollView>
+     {/* Add Button */}
+     <TouchableOpacity style={styles.fab} onPress={toggleMenu}>
           <FontAwesome5 name="plus" size={24} color="white" />
         </TouchableOpacity>
 
-        {/* Content */}
-        <ScrollView contentContainerStyle={styles.contentContainer} >
-          {renderContent()}
-        </ScrollView>
+        {/* Animated Menu */}
+        <Animated.View style={[styles.menuContainer, { height: menuHeight }]}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('CrearAviso')}>
+            <Text style={styles.menuText}>Avisos</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('CrearPublicacion')}>
+            <Text style={styles.menuText}>Publicaciones</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('CrearMercado')}>
+            <Text style={styles.menuText}>Market</Text>
+          </TouchableOpacity>
+        </Animated.View>
+
+     
+
         {/* Footer */}
         <View style={styles.footer}>
           <TouchableOpacity onPress={() => setSelectedScreen('Avisos')}>
@@ -127,7 +167,6 @@ const InicioScreen = ({ navigation }) => {
             <FontAwesome5 name="shopping-cart" size={24} color={selectedScreen === 'Mercado' ? 'tomato' : 'black'} />
           </TouchableOpacity>
         </View>
-
       </View>
     </MenuProvider>
   );
@@ -147,6 +186,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+ 
   headerText: {
     color: 'white',
     fontSize: 20,
@@ -209,15 +249,33 @@ const styles = StyleSheet.create({
   fab: {
     position: 'fixed',
     right: 20,
-    bottom: 70, // Ajusta este valor para que esté justo encima del footer
+    bottom: 70,
     backgroundColor: '#6a1b9a',
     width: 56,
     height: 56,
     borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 8, // Para Android
-    zIndex: 8, // Para iOS
+    elevation: 8,
+    zIndex: 8,
+  },
+  menuContainer: {
+    position: 'absolute',
+    right: 20,
+    bottom: 120,
+    backgroundColor: '#fff',
+    width: 120,
+    borderRadius: 10,
+    overflow: 'hidden',
+    elevation: 5,
+    paddingHorizontal: 10,
+  },
+  menuItem: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  menuText: {
+    fontSize: 16,
   },
   footer: {
     position: 'fixed',

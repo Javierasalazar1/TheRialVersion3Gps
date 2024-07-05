@@ -75,7 +75,7 @@ const LoginScreen = ({ navigation }) => {
   );
 }
 
-const Root = () => {
+const App = () => {
   return (
     <>
       <style>
@@ -103,7 +103,7 @@ const Root = () => {
   );
 }
 
-export default Root;
+export default App;
 
 const styles = StyleSheet.create({
   container: {
