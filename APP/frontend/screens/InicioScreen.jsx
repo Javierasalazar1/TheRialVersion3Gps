@@ -9,8 +9,6 @@ import { AuthContext } from '../AuthContext';
 import AvisosScreen from './AvisosScreen';
 import PublicacionesScreen from './PublicacionesScreen';
 import MercadoScreen from './MercadoScreen';
-import ModeracionScreen from './ModeracionScreen';
-import ReportesScreen from './ReportesScreen';
 
 // Tu configuración de Firebase
 const firebaseConfig = {
@@ -147,8 +145,8 @@ const InicioScreen = ({ navigation }) => {
             <Menu>
               <MenuTrigger customStyles={triggerStyles}>
                 <View style={styles.menuButton}>
-                  <Ionicons name="menu" size={24} color="white" />
-                  <Text style={styles.menuText}>Menú</Text>
+                  <Ionicons name="flower-sharp" size={24} color="white" />
+                  <Text style={styles.TextMenu}>Menú</Text>
                 </View>
               </MenuTrigger>
               <MenuOptions customStyles={optionsStyles}>
@@ -187,12 +185,12 @@ const InicioScreen = ({ navigation }) => {
         </View>
 
         {/* Content */}
-        <ScrollView contentContainerStyle={styles.contentContainer}>
+        <ScrollView contentContainerStyle={styles.contentContainer} stickyHeaderIndices={[0, 1]}>
           {renderContent()}
         </ScrollView>
 
-          {/* Add Button */}
-          <TouchableOpacity style={styles.fab} onPress={toggleMenu}>
+        {/* Add Button */}
+        <TouchableOpacity style={styles.fab} onPress={toggleMenu}>
           <FontAwesome5 name="plus" size={24} color="white" />
         </TouchableOpacity>
 
@@ -208,7 +206,6 @@ const InicioScreen = ({ navigation }) => {
             <Text style={styles.menuText}>Market</Text>
           </TouchableOpacity>
         </Animated.View>
-
 
         {/* Filters Modal */}
         {showFilters && (
@@ -241,7 +238,7 @@ const InicioScreen = ({ navigation }) => {
 
                 <Text style={styles.filterTitle}>Fecha de publicación</Text>
                 <Picker
-                style={styles.filterPicker}
+                  style={styles.filterPicker}
                   selectedValue={filter.date}
                   onValueChange={(itemValue) => handleFilterSelect('date', itemValue)}
                 >
@@ -302,12 +299,15 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#6a1b9a',
-    paddingTop: 50,
+    paddingTop: 10,
     paddingBottom: 10,
     paddingHorizontal: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    position: 'sticky',
+    top: 0,
+    zIndex: 10,
   },
   headerText: {
     color: 'white',
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 10,
   },
-  menuText: {
+  TextMenu: {
     color: 'white',
     marginLeft: 5,
   },
@@ -338,6 +338,9 @@ const styles = StyleSheet.create({
     margin: 10,
     padding: 10,
     alignItems: 'center',
+    position: 'sticky',
+    top: 60,
+    zIndex: 10,
   },
   searchInput: {
     flex: 1,
