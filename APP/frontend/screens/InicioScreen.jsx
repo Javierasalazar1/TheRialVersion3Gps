@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { StyleSheet, Text, TextInput, View, TouchableOpacity, Image, ScrollView, Animated } from 'react-native';
+import { StyleSheet, Text, TextInput, View, TouchableOpacity, Image, ScrollView, Animated, Modal } from 'react-native';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { Picker } from '@react-native-picker/picker';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { Menu, MenuOptions, MenuOption, MenuTrigger, MenuProvider } from 'react-native-popup-menu';
@@ -31,12 +32,13 @@ const InicioScreen = ({ navigation }) => {
   const [posts, setPosts] = useState([]);
   const [search, setSearch] = useState('');
   const [selectedScreen, setSelectedScreen] = useState('Avisos');
+  const [filter, setFilter] = useState({});
   const { logout } = useContext(AuthContext);
-  const menuAnimation = useRef(new Animated.Value(0)).current;
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [filter]);
 
   useEffect(() => {
     // Cambiar el título del header según la pantalla seleccionada
@@ -51,8 +53,19 @@ const InicioScreen = ({ navigation }) => {
 
   const fetchPosts = async () => {
     const querySnapshot = await getDocs(collection(firestore, 'posts'));
-    const postsData = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+    let postsData = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+    
+    if (filter) {
+      postsData = applyFilter(postsData, filter);
+    }
+    
     setPosts(postsData);
+  };
+
+  const applyFilter = (posts, filter) => {
+    // Implementar lógica de filtrado aquí según el filtro seleccionado
+    // Por ejemplo, filtrar por categoría, fecha, tipo, etc.
+    return posts;
   };
 
   const handleDeletePost = async (postId) => {
@@ -61,7 +74,7 @@ const InicioScreen = ({ navigation }) => {
   };
 
   const handleSearch = () => {
-    // Implementa la lógica de búsqueda
+    // Implementar lógica de búsqueda aquí
   };
 
   const renderContent = () => {
@@ -82,31 +95,19 @@ const InicioScreen = ({ navigation }) => {
     navigation.navigate('Login');
   };
 
-  const toggleMenu = () => {
-    Animated.timing(menuAnimation, {
-      toValue: menuAnimation._value === 0 ? 1 : 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
+  const handleFilterSelect = (type, value) => {
+    setFilter(prevFilter => ({ ...prevFilter, [type]: value }));
   };
 
-  const closeMenu = () => {
-    Animated.timing(menuAnimation, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
+  const resetFilters = () => {
+    setFilter({});
+    setShowFilters(false);
   };
 
-  const navigateToScreen = (screenName) => {
-    navigation.navigate(screenName);
-    closeMenu();
+  const applyFilters = () => {
+    fetchPosts();
+    setShowFilters(false);
   };
-
-  const menuHeight = menuAnimation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 150], // Ajusta la altura del menú desplegable según necesites
-  });
 
   return (
     <MenuProvider>
@@ -152,7 +153,7 @@ const InicioScreen = ({ navigation }) => {
             value={search}
             onChangeText={setSearch}
           />
-          <TouchableOpacity style={styles.filterButton} onPress={handleSearch}>
+          <TouchableOpacity style={styles.filterButton} onPress={() => setShowFilters(true)}>
             <FontAwesome5 name="filter" size={18} color="black" />
           </TouchableOpacity>
         </View>
@@ -163,22 +164,63 @@ const InicioScreen = ({ navigation }) => {
         </ScrollView>
 
         {/* Add Button */}
-        <TouchableOpacity style={styles.fab} onPress={toggleMenu}>
+        <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('CrearPublicacion')}>
           <FontAwesome5 name="plus" size={24} color="white" />
         </TouchableOpacity>
 
-        {/* Animated Menu */}
-        <Animated.View style={[styles.menuContainer, { height: menuHeight }]}>
-          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('CrearAviso')}>
-            <Text style={styles.menuText}>Avisos</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('CrearPublicacion')}>
-            <Text style={styles.menuText}>Publicaciones</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('CrearMercado')}>
-            <Text style={styles.menuText}>Market</Text>
-          </TouchableOpacity>
-        </Animated.View>
+        {/* Filters Modal */}
+        {showFilters && (
+          <Modal
+            transparent={true}
+            animationType="slide"
+            visible={showFilters}
+            onRequestClose={() => setShowFilters(false)}
+          >
+            <View style={styles.filterModal}>
+              <View style={styles.filterContainer}>
+                <Text style={styles.filterTitle}>Ordenar por</Text>
+                <Picker
+                  selectedValue={filter.order}
+                  onValueChange={(itemValue) => handleFilterSelect('order', itemValue)}
+                >
+                  <Picker.Item label="Más Likes" value="mostLikes" />
+                  <Picker.Item label="Menos Likes" value="leastLikes" />
+                </Picker>
+
+                <Text style={styles.filterTitle}>Categorías</Text>
+                <Picker
+                  selectedValue={filter.category}
+                  onValueChange={(itemValue) => handleFilterSelect('category', itemValue)}
+                >
+                  <Picker.Item label="Deportes" value="deportes" />
+                  <Picker.Item label="Juegos" value="juegos" />
+                  <Picker.Item label="Búsqueda" value="busqueda" />
+                </Picker>
+
+                <Text style={styles.filterTitle}>Fecha de publicación</Text>
+                <Picker
+                  selectedValue={filter.date}
+                  onValueChange={(itemValue) => handleFilterSelect('date', itemValue)}
+                >
+                  <Picker.Item label="En cualquier momento" value="anytime" />
+                  <Picker.Item label="Hoy" value="today" />
+                  <Picker.Item label="Esta semana" value="thisWeek" />
+                  <Picker.Item label="Este mes" value="thisMonth" />
+                  <Picker.Item label="Este año" value="thisYear" />
+                </Picker>
+
+                <View style={styles.filterButtons}>
+                  <TouchableOpacity style={styles.filterButtonCancel} onPress={resetFilters}>
+                    <Text style={styles.filterButtonText}>Cancelar</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.filterButtonApply} onPress={applyFilters}>
+                    <Text style={styles.filterButtonText}>Aplicar</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
+        )}
 
         {/* Footer */}
         <View style={styles.footer}>
@@ -302,23 +344,45 @@ const styles = StyleSheet.create({
     elevation: 8,
     zIndex: 8,
   },
-  menuContainer: {
-    position: 'fixed',
-    right: 20,
-    bottom: 130,
-    backgroundColor: '#fff',
-    width: 120,
-    borderRadius: 10,
-    overflow: 'hidden',
-    elevation: 5,
-    paddingHorizontal: 10,
-    zIndex: 8,
-  },
-  menuItem: {
-    paddingVertical: 12,
+  filterModal: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
+  filterContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+  },
+  filterTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+
   menuOptionText: {
+    fontSize: 16,
+  },
+
+  filterButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  filterButtonCancel: {
+    backgroundColor: 'red',
+    padding: 10,
+    borderRadius: 5,
+  },
+  filterButtonApply: {
+    backgroundColor: 'green',
+    padding: 10,
+    borderRadius: 5,
+  },
+  filterButtonText: {
+    color: 'white',
     fontSize: 16,
   },
   footer: {
