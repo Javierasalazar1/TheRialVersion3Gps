@@ -34,6 +34,7 @@ const InicioScreen = ({ navigation }) => {
   const [selectedScreen, setSelectedScreen] = useState('Avisos');
   const [filter, setFilter] = useState({});
   const { logout } = useContext(AuthContext);
+  const menuAnimation = useRef(new Animated.Value(0)).current;
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
@@ -109,6 +110,33 @@ const InicioScreen = ({ navigation }) => {
     setShowFilters(false);
   };
 
+
+  const toggleMenu = () => {
+    Animated.timing(menuAnimation, {
+      toValue: menuAnimation._value === 0 ? 1 : 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeMenu = () => {
+    Animated.timing(menuAnimation, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const navigateToScreen = (screenName) => {
+    navigation.navigate(screenName);
+    closeMenu();
+  };
+
+  const menuHeight = menuAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 150], // Ajusta la altura del menú desplegable según necesites
+  });
+
   return (
     <MenuProvider>
       <View style={styles.container}>
@@ -163,10 +191,24 @@ const InicioScreen = ({ navigation }) => {
           {renderContent()}
         </ScrollView>
 
-        {/* Add Button */}
-        <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('CrearPublicacion')}>
+          {/* Add Button */}
+          <TouchableOpacity style={styles.fab} onPress={toggleMenu}>
           <FontAwesome5 name="plus" size={24} color="white" />
         </TouchableOpacity>
+
+        {/* Animated Menu */}
+        <Animated.View style={[styles.menuContainer, { height: menuHeight }]}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('CrearAviso')}>
+            <Text style={styles.menuText}>Avisos</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('CrearPublicacion')}>
+            <Text style={styles.menuText}>Publicaciones</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('CrearMercado')}>
+            <Text style={styles.menuText}>Market</Text>
+          </TouchableOpacity>
+        </Animated.View>
+
 
         {/* Filters Modal */}
         {showFilters && (
@@ -199,6 +241,7 @@ const InicioScreen = ({ navigation }) => {
 
                 <Text style={styles.filterTitle}>Fecha de publicación</Text>
                 <Picker
+                style={styles.filterPicker}
                   selectedValue={filter.date}
                   onValueChange={(itemValue) => handleFilterSelect('date', itemValue)}
                 >
@@ -360,6 +403,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
+    marginTop: 5,
   },
 
   menuOptionText: {
@@ -383,6 +427,28 @@ const styles = StyleSheet.create({
   },
   filterButtonText: {
     color: 'white',
+    fontSize: 16,
+  },
+  filterPicker:{
+    fontSize: 10,
+  },
+  menuContainer: {
+    position: 'fixed',
+    right: 20,
+    bottom: 130,
+    backgroundColor: '#fff',
+    width: 120,
+    borderRadius: 10,
+    overflow: 'hidden',
+    elevation: 5,
+    paddingHorizontal: 10,
+    zIndex: 8,
+  },
+  menuItem: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  menuText: {
     fontSize: 16,
   },
   footer: {
