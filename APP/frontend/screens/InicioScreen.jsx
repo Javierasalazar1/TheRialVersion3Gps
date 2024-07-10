@@ -1,6 +1,5 @@
-
-import React, { useState, useEffect, useContext, useRef  } from 'react';
-import { StyleSheet, Text, TextInput, View, TouchableOpacity, Image, ScrollView, Animated , Pressable  } from 'react-native';
+import React, { useState, useEffect, useContext, useRef } from 'react';
+import { StyleSheet, Text, TextInput, View, TouchableOpacity, Image, ScrollView, Animated } from 'react-native';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
@@ -9,6 +8,8 @@ import { AuthContext } from '../AuthContext';
 import AvisosScreen from './AvisosScreen';
 import PublicacionesScreen from './PublicacionesScreen';
 import MercadoScreen from './MercadoScreen';
+import ModeracionScreen from './ModeracionScreen';
+import ReportesScreen from './ReportesScreen';
 
 // Tu configuración de Firebase
 const firebaseConfig = {
@@ -36,6 +37,17 @@ const InicioScreen = ({ navigation }) => {
   useEffect(() => {
     fetchPosts();
   }, []);
+
+  useEffect(() => {
+    // Cambiar el título del header según la pantalla seleccionada
+    const titles = {
+      Avisos: 'Avisos',
+      Publicaciones: 'Publicaciones',
+      Mercado: 'Mercado',
+    };
+    navigation.setOptions({ title: titles[selectedScreen] });
+  }, [selectedScreen, navigation]);
+
 
   const fetchPosts = async () => {
     const querySnapshot = await getDocs(collection(firestore, 'posts'));
@@ -101,11 +113,24 @@ const InicioScreen = ({ navigation }) => {
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerText}>Inicio</Text>
+          <Text style={styles.headerText}>{selectedScreen}</Text>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.menuButton}>
-              <Ionicons name="menu" size={24} color="white" />
-            </TouchableOpacity>
+            <Menu>
+              <MenuTrigger customStyles={triggerStyles}>
+                <View style={styles.menuButton}>
+                  <Ionicons name="menu" size={24} color="white" />
+                  <Text style={styles.menuText}>Menú</Text>
+                </View>
+              </MenuTrigger>
+              <MenuOptions customStyles={optionsStyles}>
+                <MenuOption onSelect={() => navigation.navigate('Moderación')}>
+                  <Text style={styles.menuOptionText}>Moderar</Text>
+                </MenuOption>
+                <MenuOption onSelect={() => navigation.navigate('Reportes')}>
+                  <Text style={styles.menuOptionText}>Reportes</Text>
+                </MenuOption>
+              </MenuOptions>
+            </Menu>
             <Menu>
               <MenuTrigger>
                 <Image source={require('../assets/user.png')} style={styles.profileIcon} />
@@ -132,10 +157,8 @@ const InicioScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-
-           {/* Content */}
-        <ScrollView contentContainerStyle={styles.contentContainer} >
-
+        {/* Content */}
+        <ScrollView contentContainerStyle={styles.contentContainer}>
           {renderContent()}
         </ScrollView>
 
@@ -174,6 +197,19 @@ const InicioScreen = ({ navigation }) => {
   );
 };
 
+const triggerStyles = {
+  triggerWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+};
+
+const optionsStyles = {
+  optionsContainer: {
+    padding: 5,
+  },
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -197,7 +233,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   menuButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 10,
+  },
+  menuText: {
+    color: 'white',
+    marginLeft: 5,
   },
   profileIcon: {
     width: 40,
@@ -276,7 +318,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
   },
-  menuText: {
+  menuOptionText: {
     fontSize: 16,
   },
   footer: {

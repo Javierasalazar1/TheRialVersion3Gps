@@ -12,6 +12,8 @@ import CrearPublicacionScreen from './screens/CrearPublicacionScreen';
 import PerfilScreen from './screens/PerfilScreen';
 import CrearAviso from './screens/CrearAvisoScreen';
 import CrearMercado from './screens/CrearMercado';
+import ModeracionScreen from './screens/ModeracionScreen';
+import ReportesScreen from './screens/ReportesScreen';
 
 
 
@@ -106,6 +108,9 @@ const App = () => {
             <Stack.Screen name="CrearAviso" component={CrearAviso} />
             <Stack.Screen name="Perfil" component={PerfilScreen} />
             <Stack.Screen name="CrearMercado" component={CrearMercado} />
+
+            <Stack.Screen name="Moderación" component={ModeracionScreen} />
+            <Stack.Screen name="Reportes" component={ReportesScreen} />
 
 
           </Stack.Navigator>
