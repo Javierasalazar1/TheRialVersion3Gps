@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, Image, ActivityIndicator, TextInput, Button, Alert } from 'react-native';
 import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs } from 'firebase/firestore';
+import { Ionicons } from '@expo/vector-icons';
+import Toast from 'react-native-toast-message';
 
 const PAGE_SIZE = 10;
 
@@ -12,6 +14,22 @@ const AvisosScreen = () => {
   const [error, setError] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedAviso, setSelectedAviso] = useState(null);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportDetails, setReportDetails] = useState("");
+  const [showReportError, setShowReportError] = useState(false); // Nuevo estado para mostrar el error
+
+  const reportReasons = [
+    "Contenido inapropiado",
+    "Spam",
+    "Fraude",
+    "Incitación al odio",
+    "Información falsa",
+    "Acoso",
+    "No le gusta el queso",
+    "No le gusta Nintendo",
+    "Otro"
+  ];
 
   useEffect(() => {
     fetchAvisos();
@@ -69,18 +87,45 @@ const AvisosScreen = () => {
     }
   };
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity onPress={() => handlePress(item)}>
-      <View style={styles.item}>
-        <Text style={styles.title}>{item.titulo}</Text>
-      </View>
-    </TouchableOpacity>
-  );
-
   const handlePress = (item) => {
     setSelectedAviso(item);
     setModalVisible(true);
   };
+
+  const handleReportPress = (item) => {
+    setSelectedAviso(item);
+    setReportReason("");
+    setReportDetails("");
+    setShowReportError(false); // Reiniciar el estado de error al abrir el modal
+    setReportModalVisible(true);
+  };
+
+  const handleReportSubmit = () => {
+    if (!reportReason) {
+      setShowReportError(true); // Mostrar mensaje de error si no se ha seleccionado un motivo
+      return;
+    }
+
+    // Envío del reporte simulado con un Toast para el feedback
+    Toast.show({
+      type: 'success',
+      text1: 'Reporte enviado',
+      text2: 'Tu reporte ha sido enviado con éxito.'
+    });
+
+    setReportModalVisible(false);
+  };
+
+  const renderItem = ({ item }) => (
+    <View style={styles.itemContainer}>
+      <TouchableOpacity onPress={() => handlePress(item)} style={styles.item}>
+        <Text style={styles.title}>{item.titulo}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => handleReportPress(item)} style={styles.reportIcon}>
+        <Ionicons name="flag-outline" size={24} color="red" />
+      </TouchableOpacity>
+    </View>
+  );
 
   if (loading) {
     return (
@@ -131,6 +176,47 @@ const AvisosScreen = () => {
           </View>
         </Modal>
       )}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={reportModalVisible}
+        onRequestClose={() => setReportModalVisible(false)}
+      >
+        <View style={styles.reportModalContainer}>
+          <View style={styles.reportModalContent}>
+            <Text style={styles.reportTitle}>Reportar Aviso</Text>
+            <View style={styles.reasonsContainer}>
+              {reportReasons.map((reason, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => setReportReason(reason)}
+                  style={[
+                    styles.reportOption,
+                    reportReason === reason ? styles.selectedReportOption : null
+                  ]}
+                >
+                  <Text style={[styles.reportOptionText, reportReason === reason ? styles.selectedReportOptionText : null]}>{reason}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TextInput
+              style={styles.reportInput}
+              placeholder="Detalles adicionales (opcional)"
+              value={reportDetails}
+              onChangeText={setReportDetails}
+              multiline
+            />
+            {showReportError && (
+              <Text style={styles.errorText}>Selecciona un motivo antes de enviar el reporte.</Text>
+            )}
+            <View style={styles.reportButtonContainer}>
+              <Button title="Cancelar" color="red" onPress={() => setReportModalVisible(false)} />
+              <Button title="Enviar" onPress={handleReportSubmit} />
+            </View>
+          </View>
+        </View>
+      </Modal>
+      <Toast ref={(ref) => Toast.setRef(ref)} />
     </View>
   );
 };
@@ -139,7 +225,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
-    marginBottom: 50, // Ajusta este valor según el tamaño de tu barra de navegación en InicioScreen
   },
   loadingContainer: {
     flex: 1,
@@ -150,32 +235,25 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
   },
-  errorText: {
-    fontSize: 18,
-    color: 'red',
-    textAlign: 'center',
-  },
-  text: {
-    fontSize: 18,
+  itemContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+    backgroundColor: '#f9f9f9',
+    padding: 10,
+    borderRadius: 5,
   },
   item: {
-    backgroundColor: '#fff',
-    padding: 20,
-    marginVertical: 8,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 5,
+    flex: 1,
   },
   title: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 'bold',
   },
-  flatlistContent: {
-    paddingBottom: 50, // Ajusta este valor según el tamaño de tu barra de navegación en InicioScreen
+  reportIcon: {
+    paddingLeft: 10,
   },
   modalContainer: {
     flex: 1,
@@ -184,41 +262,97 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    width: '80%',
     backgroundColor: '#fff',
     padding: 20,
     borderRadius: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 5,
+    width: '80%',
+    alignItems: 'center',
   },
   modalImage: {
     width: '100%',
     height: 200,
     borderRadius: 10,
-    marginBottom: 20,
   },
   modalTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginVertical: 10,
   },
   modalDetail: {
     fontSize: 16,
-    marginBottom: 20,
+    textAlign: 'center',
+    marginVertical: 10,
   },
   closeButton: {
-    alignSelf: 'center',
-    backgroundColor: '#6a1b9a',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 25,
+    marginTop: 20,
   },
   closeButtonText: {
-    color: 'white',
-    fontSize: 16,
+    fontSize: 18,
+    color: '#007BFF',
+  },
+  reportModalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  reportModalContent: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+  },
+  reportTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  reasonsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  reportOption: {
+    margin: 5,
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    backgroundColor: '#f0f0f0',
+  },
+  reportOptionText: {
+    fontSize: 18,
+  },
+  selectedReportOption: {
+    fontWeight: 'bold',
+    color: '#007BFF',
+    backgroundColor: '#e0e0e0',
+  },
+  selectedReportOptionText: {
+    color: '#007BFF',
+  },
+  reportInput: {
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    minHeight: 100,
+    padding: 10,
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  reportButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  errorText: {
+    fontSize: 18,
+    color: 'red',
     textAlign: 'center',
+    marginTop: 10,
+  },
+  text: {
+    fontSize: 18,
   },
 });
 

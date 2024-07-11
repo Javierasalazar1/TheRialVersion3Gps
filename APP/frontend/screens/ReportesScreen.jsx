@@ -4,7 +4,7 @@ import { View, Text, StyleSheet } from 'react-native';
 const ReportesScreen = () => {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Reportes</Text>
+      <Text style={styles.text}>Sin Reportes Pendientes de Revisión</Text>
     </View>
   );
 };
