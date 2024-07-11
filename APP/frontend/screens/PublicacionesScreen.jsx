@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, ActivityIndicator } from 'react-native';
-import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs, getDoc, doc } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { View, Text, StyleSheet, FlatList, Image, ActivityIndicator, TouchableOpacity, Modal, TextInput } from 'react-native';
+import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs, getDoc, doc, addDoc } from 'firebase/firestore';
+import Toast from 'react-native-toast-message';
+import { Ionicons } from '@expo/vector-icons';
 
 const PAGE_SIZE = 10;
 
@@ -11,6 +12,11 @@ const PublicacionesScreen = () => {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedReason, setSelectedReason] = useState('');
+  const [additionalInfo, setAdditionalInfo] = useState('');
+  const [selectedPublication, setSelectedPublication] = useState(null);
+  const [showReportError, setShowReportError] = useState(false); // Nuevo estado para mostrar el error
 
   useEffect(() => {
     fetchPublicaciones();
@@ -116,13 +122,69 @@ const PublicacionesScreen = () => {
     }
   };
 
+  const reportReasons = [
+    "Contenido inapropiado",
+    "Spam",
+    "Fraude",
+    "Incitación al odio",
+    "Información falsa",
+    "Acoso",
+    "No le gusta el queso",
+    "No le gusta Nintendo",
+    "Otro"
+  ];
+
+  const handleReport = async () => {
+    if (!selectedReason) {
+      setShowReportError(true); // Mostrar mensaje de error si no se ha seleccionado un motivo
+      return;
+    }
+
+    try {
+      const db = getFirestore();
+      await addDoc(collection(db, 'reports'), {
+        reason: selectedReason,
+        additionalInfo,
+        timestamp: new Date(),
+        publicationId: selectedPublication,
+      });
+
+      Toast.show({
+        type: 'success',
+        text1: 'Reporte enviado con éxito',
+      });
+
+      setSelectedReason('');
+      setAdditionalInfo('');
+      setModalVisible(false);
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error al enviar el reporte',
+        text2: error.message,
+      });
+    }
+  };
+
+  const openReportModal = (publicationId) => {
+    setSelectedPublication(publicationId);
+    setModalVisible(true);
+  };
+
   const renderItem = ({ item }) => (
     <View style={styles.item}>
-      <Text style={styles.userEmail}>{item.userEmail}</Text>
-      {item.imagen ? <Image source={{ uri: item.imagen }} style={styles.image} onError={(e) => console.log('Error al cargar la imagen:', e.nativeEvent.error)} /> : null}
-      <Text style={styles.title}>{item.nombre}</Text>
-      <Text style={styles.detail}>{item.detalle}</Text>
-      <Text style={styles.category}>{item.categoria}</Text>
+      <View style={styles.itemContent}>
+        <View style={styles.itemText}>
+          <Text style={styles.userEmail}>{item.userEmail}</Text>
+          {item.imagen ? <Image source={{ uri: item.imagen }} style={styles.image} onError={(e) => console.log('Error al cargar la imagen:', e.nativeEvent.error)} /> : null}
+          <Text style={styles.title}>{item.nombre}</Text>
+          <Text style={styles.detail}>{item.detalle}</Text>
+          <Text style={styles.category}>{item.categoria}</Text>
+        </View>
+        <TouchableOpacity onPress={() => openReportModal(item.id)} style={styles.flagIcon}>
+          <Ionicons name="flag-outline" size={24} color="red" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -154,6 +216,61 @@ const PublicacionesScreen = () => {
         ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#0000ff" />}
         contentContainerStyle={styles.flatlistContent}
       />
+
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Reportar Publicación</Text>
+            
+            <View style={styles.reportContainer}>
+              {reportReasons.map((reason, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.reportReasonBox,
+                    selectedReason === reason && { backgroundColor: '#007BFF' }
+                  ]}
+                  onPress={() => setSelectedReason(reason)}
+                >
+                  <Text style={[
+                    styles.reportReasonText,
+                    selectedReason === reason && { color: 'white' }
+                  ]}>
+                    {reason}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TextInput
+              style={styles.reportInput}
+              multiline
+              placeholder="Información adicional (opcional)"
+              value={additionalInfo}
+              onChangeText={setAdditionalInfo}
+            />
+{showReportError && (
+              <Text style={styles.errorText}>Selecciona un motivo antes de enviar el reporte.</Text>
+            )}
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(false)}>
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.acceptButton} onPress={handleReport}>
+                <Text style={styles.acceptButtonText}>Enviar Reporte</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Toast ref={(ref) => Toast.setRef(ref)} />
     </View>
   );
 };
@@ -161,8 +278,8 @@ const PublicacionesScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 10,
-    marginBottom: 50, // Ajusta este valor según el tamaño de tu barra de navegación en InicioScreen
+    backgroundColor: '#fff',
+    paddingHorizontal: 20,
   },
   loadingContainer: {
     flex: 1,
@@ -193,6 +310,13 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 5,
   },
+  itemContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  itemText: {
+    flex: 1,
+  },
   userEmail: {
     fontSize: 14,
     fontWeight: 'bold',
@@ -221,6 +345,82 @@ const styles = StyleSheet.create({
   },
   flatlistContent: {
     paddingBottom: 50, // Ajusta este valor según el tamaño de tu barra de navegación en InicioScreen
+  },
+  flagIcon: {
+    alignSelf: 'flex-end',
+    marginTop: 'auto',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContainer: {
+    width: '80%',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  reportContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  reportReasonBox: {
+    padding: 10,
+    margin: 5,
+    borderRadius: 10,
+    backgroundColor: '#f0f0f0',
+  },
+  reportReasonText: {
+    fontSize: 16,
+  },
+  reportInput: {
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 10,
+    marginVertical: 10,
+    height: 100,
+    width: '80%', // Ajusta el ancho según tus necesidades
+    textAlignVertical: 'top',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+  },
+  cancelButton: {
+    backgroundColor: 'red',
+    padding: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    width: '40%',
+  },
+  cancelButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  acceptButton: {
+    backgroundColor: '#007BFF',
+    padding: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    width: '40%',
+  },
+  acceptButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
