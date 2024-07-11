@@ -176,6 +176,7 @@ const AvisosScreen = () => {
           </View>
         </Modal>
       )}
+
       <Modal
         animationType="slide"
         transparent={true}
@@ -185,6 +186,7 @@ const AvisosScreen = () => {
         <View style={styles.reportModalContainer}>
           <View style={styles.reportModalContent}>
             <Text style={styles.reportTitle}>Reportar Aviso</Text>
+
             <View style={styles.reasonsContainer}>
               {reportReasons.map((reason, index) => (
                 <TouchableOpacity
@@ -195,10 +197,16 @@ const AvisosScreen = () => {
                     reportReason === reason ? styles.selectedReportOption : null
                   ]}
                 >
-                  <Text style={[styles.reportOptionText, reportReason === reason ? styles.selectedReportOptionText : null]}>{reason}</Text>
+                  <Text style={[
+                    styles.reportOptionText,
+                    reportReason === reason ? styles.selectedReportOptionText : null
+                    ]}>
+                      {reason}
+                    </Text>
                 </TouchableOpacity>
               ))}
             </View>
+
             <TextInput
               style={styles.reportInput}
               placeholder="Detalles adicionales (opcional)"
@@ -311,7 +319,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    marginBottom: 10,
   },
   reportOption: {
     margin: 5,

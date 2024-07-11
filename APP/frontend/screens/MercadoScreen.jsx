@@ -30,6 +30,7 @@ const MercadoScreen = () => {
   const [reportReason, setReportReason] = useState('');
   const [reportDetails, setReportDetails] = useState('');
   const [showReportError, setShowReportError] = useState(false); // Nuevo estado para mostrar el error
+  
   useEffect(() => {
     fetchPublicaciones();
   }, []);
@@ -228,7 +229,7 @@ const MercadoScreen = () => {
             )}
             <View style={styles.modalButtons}>
               <Button title="Cancelar" onPress={handleCloseModal} color="red" />
-              <Button title="Enviar reporte" onPress={handleReportSubmit} />
+              <Button title="Enviar" onPress={handleReportSubmit} />
             </View>
           </View>
         </View>
