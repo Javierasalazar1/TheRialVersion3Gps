@@ -1,10 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image, ActivityIndicator, TouchableOpacity, Alert, Modal, TextInput, Button } from 'react-native';
 import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import { Menu, MenuOptions, MenuOption, MenuTrigger, MenuProvider } from 'react-native-popup-menu';
+import Toast from 'react-native-toast-message';
 
 const PAGE_SIZE = 10;
+
+const reportReasons = [
+  "Contenido inapropiado",
+  "Spam",
+  "Fraude",
+  "Incitación al odio",
+  "Información falsa",
+  "Acoso",
+  "No le gusta el queso",
+  "No le gusta Nintendo",
+  "Otro"
+];
 
 const MercadoScreen = () => {
   const [publicaciones, setPublicaciones] = useState([]);
@@ -12,7 +25,11 @@ const MercadoScreen = () => {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
-
+  const [selectedItemId, setSelectedItemId] = useState(null); // Estado para almacenar el ID del item seleccionado para reportar
+  const [modalVisible, setModalVisible] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportDetails, setReportDetails] = useState('');
+  const [showReportError, setShowReportError] = useState(false); // Nuevo estado para mostrar el error
   useEffect(() => {
     fetchPublicaciones();
   }, []);
@@ -102,10 +119,43 @@ const MercadoScreen = () => {
     }
   };
 
+  const handleReportItem = (itemId) => {
+    setSelectedItemId(itemId);
+    setModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalVisible(false);
+    setSelectedItemId(null);
+    setReportReason('');
+    setShowReportError(false); // Reiniciar el estado de error al abrir el modal
+    setReportDetails('');
+  };
+
+  const handleReportSubmit = () => {
+    if (!reportReason) {
+      setShowReportError(true); // Mostrar mensaje de error si no se ha seleccionado un motivo
+      return;
+    }
+
+    // Envío del reporte simulado con un Toast para el feedback
+    Toast.show({
+      type: 'success',
+      text1: 'Reporte enviado',
+      text2: 'Tu reporte ha sido enviado con éxito.'
+    });
+
+    // Cerrar el modal y limpiar los estados
+    handleCloseModal();
+  };
+
   const renderItem = ({ item }) => (
     <View style={styles.item}>
       <View style={styles.header}>
         <Text style={styles.name}>{item.usuario}</Text>
+        <TouchableOpacity onPress={() => handleReportItem(item.id)}>
+          <Ionicons name="flag-outline" size={24} color="red" style={styles.reportIcon} />
+        </TouchableOpacity>
         <Menu>
           <MenuTrigger>
             <Ionicons name="ellipsis-vertical" size={22} color="black" />
@@ -127,23 +177,6 @@ const MercadoScreen = () => {
     </View>
   );
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
-        <Text style={styles.text}>Cargando publicaciones...</Text>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>{error}</Text>
-      </View>
-    );
-  }
-
   return (
     <MenuProvider>
       <View style={styles.container}>
@@ -158,6 +191,49 @@ const MercadoScreen = () => {
           style={{ flex: 1 }}
         />
       </View>
+
+      {/* Modal de reporte */}
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={handleCloseModal}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Reportar publicación</Text>
+            <View style={styles.reasonsContainer}>
+              {reportReasons.map((reason, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => setReportReason(reason)}
+                  style={[
+                    styles.reportOption,
+                    reportReason === reason ? styles.selectedReportOption : null
+                  ]}
+                >
+                  <Text style={[styles.reportOptionText, reportReason === reason ? styles.selectedReportOptionText : null]}>{reason}</Text>
+                  </TouchableOpacity>
+              ))}
+            </View>
+            <TextInput
+              style={styles.input}
+              value={reportDetails}
+              onChangeText={text => setReportDetails(text)}
+              placeholder="Detalles adicionales (opcional)"
+              multiline
+            />
+            {showReportError && (
+              <Text style={styles.errorText}>Selecciona un motivo antes de enviar el reporte.</Text>
+            )}
+            <View style={styles.modalButtons}>
+              <Button title="Cancelar" onPress={handleCloseModal} color="red" />
+              <Button title="Enviar reporte" onPress={handleReportSubmit} />
+            </View>
+          </View>
+        </View>
+      </Modal>
+      <Toast ref={(ref) => Toast.setRef(ref)} />
     </MenuProvider>
   );
 };
@@ -166,25 +242,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 18,
-    color: 'red',
-    textAlign: 'center',
-  },
-  text: {
-    fontSize: 18,
   },
   item: {
     backgroundColor: '#fff',
@@ -198,8 +255,8 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 10,
   },
   ima: {
     alignItems: 'center',
@@ -211,6 +268,7 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 16,
     fontWeight: 'bold',
+    flex: 1,
   },
   userEmail: {
     fontSize: 14,
@@ -221,20 +279,82 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-  },
-  detail: {
-    fontSize: 16,
-    marginTop: 5,
-  },
-  image: {
-    width: '50%',
-    height: 100, // Tamaño fijo más pequeño
-    borderRadius: 10,
-    marginTop: 10,
     marginBottom: 10,
   },
-  menuOption: {
+  image: {
+    width: '100%',
+    height: 200,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  reportIcon: {
+    marginLeft: 10,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  modalLabel: {
+    fontSize: 16,
+    marginBottom: 5,
+    alignSelf: 'flex-start',
+  },
+  input: {
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    minHeight: 100,
     padding: 10,
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  reasonsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  reportOption: {
+    margin: 5,
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    backgroundColor: '#f0f0f0',
+  },
+  reportOptionText: {
+    fontSize: 18,
+  },
+  selectedReportOption: {
+    fontWeight: 'bold',
+    color: '#007BFF',
+    backgroundColor: '#e0e0e0',
+  },
+  selectedReportOptionText: {
+    color: '#007BFF',
+  },
+  errorText: {
+    fontSize: 18,
+    color: 'red',
+    textAlign: 'center',
+    marginTop: 10,
   },
 });
 
