@@ -1,12 +1,9 @@
 import { Router } from 'express';
-import * as authCtrl from '../controllers/authController.js';
-import { verifyToken } from '../middlewares/authJwt.js';
+import { signUp, signIn } from '../controllers/auth.controller.js';
 
 const router = Router();
 
-router.post('/signup', authCtrl.signUp);
-router.post('/signin', authCtrl.signIn);
-
-// Puedes agregar más rutas según tus necesidades
+router.post('/signup', signUp);
+router.post('/signin', signIn);
 
 export default router;

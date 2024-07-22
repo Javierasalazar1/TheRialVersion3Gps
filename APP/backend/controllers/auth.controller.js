@@ -1,50 +1,41 @@
+import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
-import config from '../config.js'; // Asegúrate de tener un archivo de configuración para las claves secretas y otros parámetros
+import config from '../config.js';
 
-// Registro de usuarios
+// Registro de usuario
 export const signUp = async (req, res) => {
-  const { username, email, password, roles } = req.body;
+  const { username, email, password } = req.body;
 
-  try {
-    const newUser = new User({
-      username,
-      email,
-      password: await User.encryptPassword(password),
-      roles
-    });
+  // Crea un nuevo usuario
+  const newUser = new User({
+    username,
+    email,
+    password: await User.encryptPassword(password)
+  });
 
-    const savedUser = await newUser.save();
+  const savedUser = await newUser.save();
 
-    const token = jwt.sign({ id: savedUser._id }, config.SECRET, {
-      expiresIn: 86400 // 24 horas
-    });
+  // Genera un token
+  const token = jwt.sign({ id: savedUser._id }, config.SECRET, {
+    expiresIn: 86400 // 24 horas
+  });
 
-    res.status(200).json({ token });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+  res.status(200).json({ token });
 };
 
 // Inicio de sesión
 export const signIn = async (req, res) => {
   const { email, password } = req.body;
 
-  try {
-    const user = await User.findOne({ email }).populate('roles');
+  const userFound = await User.findOne({ email });
+  if (!userFound) return res.status(400).json({ message: "User Not Found" });
 
-    if (!user) return res.status(400).json({ message: 'Usuario no encontrado' });
+  const matchPassword = await User.comparePassword(password, userFound.password);
+  if (!matchPassword) return res.status(401).json({ token: null, message: "Invalid Password" });
 
-    const matchPassword = await User.comparePassword(password, user.password);
+  const token = jwt.sign({ id: userFound._id }, config.SECRET, {
+    expiresIn: 86400 // 24 horas
+  });
 
-    if (!matchPassword) return res.status(401).json({ token: null, message: 'Contraseña incorrecta' });
-
-    const token = jwt.sign({ id: user._id }, config.SECRET, {
-      expiresIn: 86400 // 24 horas
-    });
-
-    res.json({ token });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+  res.json({ token });
 };
