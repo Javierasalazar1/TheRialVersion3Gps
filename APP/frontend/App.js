@@ -1,35 +1,18 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, View, TouchableOpacity, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';  // Importar axios
 import { AuthProvider } from './AuthContext';
 import InicioScreen from './screens/InicioScreen';
 import CrearPublicacionScreen from './screens/CrearPublicacionScreen';
-
 import PerfilScreen from './screens/PerfilScreen';
-import CrearAviso from './screens/CrearAvisoScreen';
+import CrearAvisoScreen from './screens/CrearAvisoScreen';
 import CrearMercado from './screens/CrearMercado';
 import ModeracionScreen from './screens/ModeracionScreen';
 import ReportesScreen from './screens/ReportesScreen';
-
-
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDK71FGurfMwk2XbZ3UwzdC-uTHegEZkj4",
-  authDomain: "gps2024-119de.firebaseapp.com",
-  databaseURL: "https://gps2024-119de-default-rtdb.firebaseio.com",
-  projectId: "gps2024-119de",
-  storageBucket: "gps2024-119de.appspot.com",
-  messagingSenderId: "816992076661",
-  appId: "1:816992076661:web:e715cd65134c743dcc493c",
-  measurementId: "G-VXR027HFXL"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 
 const Stack = createStackNavigator();
 
@@ -45,10 +28,18 @@ const LoginScreen = ({ navigation }) => {
         return;
       }
 
-      await signInWithEmailAndPassword(auth, email, password);
-      setErrorMessage('');
-      // Después del inicio de sesión, navega a la pantalla InicioScreen
-      navigation.navigate('Inicio');
+      const response = await axios.post('http://localhost:4000/api/auth/signin', {
+        email,
+        password
+      });
+
+      if (response.status === 200 && response.data.token) {
+        await AsyncStorage.setItem('token', response.data.token);
+        setErrorMessage('');
+        navigation.navigate('Inicio');
+      } else {
+        setErrorMessage('Error al iniciar sesión. Por favor, inténtalo de nuevo.');
+      }
     } catch (error) {
       console.error("Error al iniciar sesión:", error.message);
       setErrorMessage('Error al iniciar sesión. Por favor, inténtalo de nuevo.');
@@ -81,7 +72,7 @@ const LoginScreen = ({ navigation }) => {
       <StatusBar style="auto" />
     </View>
   );
-}
+};
 
 const App = () => {
   return (
@@ -104,21 +95,17 @@ const App = () => {
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Inicio" component={InicioScreen} />
             <Stack.Screen name="CrearPublicacion" component={CrearPublicacionScreen} />
-
-            <Stack.Screen name="CrearAviso" component={CrearAviso} />
+            <Stack.Screen name="CrearAviso" component={CrearAvisoScreen} />
             <Stack.Screen name="Perfil" component={PerfilScreen} />
             <Stack.Screen name="CrearMercado" component={CrearMercado} />
-
             <Stack.Screen name="Moderación" component={ModeracionScreen} />
             <Stack.Screen name="Reportes" component={ReportesScreen} />
-
-
           </Stack.Navigator>
         </NavigationContainer>
       </AuthProvider>
     </>
   );
-}
+};
 
 export default App;
 

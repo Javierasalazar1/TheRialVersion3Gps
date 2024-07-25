@@ -1,19 +1,34 @@
-"use strict";
-// Importa el modulo 'express' para crear las rutas
-import { Router } from "express";
+import { Router } from 'express';
+import jwt from 'jsonwebtoken';
+import User from '../models/user.model.js';
 
-/** Controlador de autenticación */
-import authController from "../controllers/auth.controller.js";
-
-/** Instancia del enrutador */
 const router = Router();
 
-// Define las rutas para la autenticación
-router.post("/login", authController.login);
-router.post("/logout", authController.logout);
-router.get("/refresh", authController.refresh);
+// Asegúrate de que esto venga de una variable de entorno en producción
+const JWT_SECRET = process.env.JWT_SECRET || 'aguantecolocolo';
 
-router.post("/signin", authController.signin);
+// En auth.routes.js
 
-// Exporta el enrutador
+router.post('/signin', async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: 'Usuario no encontrado' });
+    }
+
+    // Comparación directa de contraseñas
+    if (password !== user.password) {
+      return res.status(400).json({ message: 'Contraseña incorrecta' });
+    }
+
+    // Si la autenticación es exitosa, genera y envía el token
+    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '1h' });
+    res.json({ token });
+  } catch (err) {
+    res.status(500).json({ message: 'Error en el servidor' });
+  }
+});
+
 export default router;

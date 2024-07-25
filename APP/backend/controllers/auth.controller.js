@@ -1,130 +1,33 @@
-"use strict";
+import User from '../models/user.model.js';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 
+// Configura tu clave secreta para JWT
+const SECRET_KEY = 'aguantecolocolo';
 
-import { respondSuccess, respondError } from "../utils/resHandler.js";
-import { handleError } from "../utils/errorHandler.js";
-
-/** Servicios de autenticación */
-import AuthService from "../services/auth.service.js";
-import { authLoginBodySchema } from "../schema/auth.schema.js";
-
-import UserService from "../services/user.service.js";
-import { userBodySchema, userIdSchema } from "../schema/user.schema.js";
-
-
-/**
- * Inicia sesión con un usuario.
- * @async
- * @function login
- * @param {Object} req - Objeto de petición
- * @param {Object} res - Objeto de respuesta
- */
-async function login(req, res) {
-  try {
-    const { body } = req;
-    const { error: bodyError } = authLoginBodySchema.validate(body);
-    if (bodyError) return respondError(req, res, 400, bodyError.message);
-
-    const [accessToken, refreshToken, errorToken] =
-      await AuthService.login(body);
-
-    if (errorToken) return respondError(req, res, 400, errorToken);
-
-    // Obtener la fecha de expiración del token
-    const expirationDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días desde ahora
-
-    // Existen más opciones de seguridad para las cookies
-    res.cookie("jwt", refreshToken, {
-      httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
-    });
-
-    // Respondemos con el token de acceso y la fecha de expiración
-    respondSuccess(req, res, 200, { accessToken, expirationDate });
-  } catch (error) {
-    handleError(error, "auth.controller -> login");
-    respondError(req, res, 400, error.message);
-  }
-}
-
-
-/**
- * @name logout
- * @description Cierra la sesión del usuario
- * @param {Object} req - Objeto de petición
- * @param {Object} res - Objeto de respuesta
- * @returns
- */
-async function logout(req, res) {
-  try {
-    const cookies = req.cookies;
-    if (!cookies?.jwt) return respondError(req, res, 400, "No hay token");
-    res.clearCookie("jwt", { httpOnly: true });
-    respondSuccess(req, res, 200, { message: "Sesión cerrada correctamente" });
-  } catch (error) {
-    handleError(error, "auth.controller -> logout");
-    respondError(req, res, 400, error.message);
-  }
-}
-
-/**
- * @name refresh
- * @description Refresca el token de acceso
- * @param {Object} req - Objeto de petición
- * @param {Object} res - Objeto de respuesta
- */
-async function refresh(req, res) {
-  try {
-    const cookies = req.cookies;
-    if (!cookies?.jwt) return respondError(req, res, 400, "No hay token");
-
-    const [accessToken, errorToken] = await AuthService.refresh(cookies);
-
-    if (errorToken) return respondError(req, res, 400, errorToken);
-
-    respondSuccess(req, res, 200, { accessToken });
-  } catch (error) {
-    handleError(error, "auth.controller -> refresh");
-    respondError(req, res, 400, error.message);
-  }
-}
-
-async function signin(req, res) {
-
-  req.body.roles = ["user"];
-
-  const { body } = req;
-  const { error: bodyError } = userBodySchema.validate(body);
-
-  if (bodyError) {
-    return respondError(req, res, 400, bodyError.message);
-  }
-
-  
+export const signin = async (req, res) => {
+  const { email, password } = req.body;
 
   try {
-    
-    const [newUser, userError] = await UserService.createUser(body);
-
-    if (userError) return respondError(req, res, 400, userError);
-    if (!newUser) {
-      return respondError(req, res, 400, "No se creo el usuario");
+    // Buscar el usuario por email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: 'Usuario no encontrado' });
     }
 
-    respondSuccess(req, res, 201, newUser);
+    // Comparar la contraseña ingresada con la contraseña almacenada
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Contraseña incorrecta' });
+    }
 
+    // Crear el token JWT
+    const token = jwt.sign({ id: user._id, email: user.email }, SECRET_KEY, {
+      expiresIn: '1h', // Expiración del token
+    });
+
+    res.json({ token });
   } catch (error) {
-    handleError(error, "auth.controller -> signin");
-    return respondError(req, res, 400, error.message);
+    res.status(500).json({ message: 'Error al iniciar sesión', error });
   }
-}
-
-
-
-
-export default {
-  login,
-  logout,
-  refresh,
-  signin,
 };
