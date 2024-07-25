@@ -148,7 +148,7 @@ const InicioScreen = ({ navigation }) => {
               <MenuTrigger customStyles={triggerStyles}>
                 <View style={styles.menuButton}>
                   <Ionicons name="menu" size={24} color="white" />
-                  <Text style={styles.menuText}>Menú</Text>
+                  <Text style={styles.Textmenu} >Menú</Text>
                 </View>
               </MenuTrigger>
               <MenuOptions customStyles={optionsStyles}>
@@ -308,6 +308,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  Textmenu:{
+    color: 'white',
+    fontSize: 18,
   },
   headerText: {
     color: 'white',
