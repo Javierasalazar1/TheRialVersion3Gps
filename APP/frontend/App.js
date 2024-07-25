@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';  // Importar axios
 import { AuthProvider } from './AuthContext';
 import InicioScreen from './screens/InicioScreen';
 import CrearPublicacionScreen from './screens/CrearPublicacionScreen';
@@ -26,27 +27,15 @@ const LoginScreen = ({ navigation }) => {
         setErrorMessage('Por favor, ingresa el correo y la contraseña.');
         return;
       }
-  
-      const response = await fetch('http://localhost:4000/api/auth/signin', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+
+      const response = await axios.post('http://localhost:4000/api/auth/signin', {
+        email,
+        password
       });
-  
-      if (!response.ok) {
-        setErrorMessage('Error al iniciar sesión. Por favor, inténtalo de nuevo.');
-        return;
-      }
-  
-      const data = await response.json();
-  
-      if (data.token) {
-        // Almacenar el token en el almacenamiento seguro
-        await AsyncStorage.setItem('token', data.token);
+
+      if (response.status === 200 && response.data.token) {
+        await AsyncStorage.setItem('token', response.data.token);
         setErrorMessage('');
-        // Después del inicio de sesión, navega a la pantalla InicioScreen
         navigation.navigate('Inicio');
       } else {
         setErrorMessage('Error al iniciar sesión. Por favor, inténtalo de nuevo.');

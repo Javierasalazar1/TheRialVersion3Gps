@@ -23,9 +23,9 @@ mongoose.connect('mongodb+srv://admin2:qsk51KtuThvJ41TF@bdd-app.1d5eqkc.mongodb.
 
 // Default route
 app.get('/', (req, res) => {
-  res.send('API is running...');
+  res.send('Conectado con el backend de pana');
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server corriendo en  http://localhost:${PORT}`);
 });
