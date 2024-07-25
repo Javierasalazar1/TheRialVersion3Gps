@@ -1,41 +1,33 @@
 import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
-import config from '../config.js';
+import bcrypt from 'bcryptjs';
 
-// Registro de usuario
-export const signUp = async (req, res) => {
-  const { username, email, password } = req.body;
+// Configura tu clave secreta para JWT
+const SECRET_KEY = 'aguantecolocolo';
 
-  // Crea un nuevo usuario
-  const newUser = new User({
-    username,
-    email,
-    password: await User.encryptPassword(password)
-  });
-
-  const savedUser = await newUser.save();
-
-  // Genera un token
-  const token = jwt.sign({ id: savedUser._id }, config.SECRET, {
-    expiresIn: 86400 // 24 horas
-  });
-
-  res.status(200).json({ token });
-};
-
-// Inicio de sesión
-export const signIn = async (req, res) => {
+export const signin = async (req, res) => {
   const { email, password } = req.body;
 
-  const userFound = await User.findOne({ email });
-  if (!userFound) return res.status(400).json({ message: "User Not Found" });
+  try {
+    // Buscar el usuario por email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: 'Usuario no encontrado' });
+    }
 
-  const matchPassword = await User.comparePassword(password, userFound.password);
-  if (!matchPassword) return res.status(401).json({ token: null, message: "Invalid Password" });
+    // Comparar la contraseña ingresada con la contraseña almacenada
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Contraseña incorrecta' });
+    }
 
-  const token = jwt.sign({ id: userFound._id }, config.SECRET, {
-    expiresIn: 86400 // 24 horas
-  });
+    // Crear el token JWT
+    const token = jwt.sign({ id: user._id, email: user.email }, SECRET_KEY, {
+      expiresIn: '1h', // Expiración del token
+    });
 
-  res.json({ token });
+    res.json({ token });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al iniciar sesión', error });
+  }
 };

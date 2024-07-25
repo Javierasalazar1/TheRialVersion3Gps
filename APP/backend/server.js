@@ -1,33 +1,31 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import config from './config.js';
-import authRoutes from './routes/auth.routes.js'; // Importa las rutas de autenticación
-import bodyParser from 'body-parser';
+import cors from 'cors';
+import authRoutes from './routes/auth.routes.js';
 
 const app = express();
-const PORT = config.PORT || 4000; // Usa el puerto de config o 3000 por defecto
+const PORT = process.env.PORT || 4000;
 
-// Middleware
-app.use(bodyParser.json()); // Para manejar datos en formato JSON
+// Middlewares
+app.use(cors());
+app.use(express.json());
 
-// Rutas
+// Routes
 app.use('/api/auth', authRoutes);
 
-// Conectar a MongoDB
-mongoose.connect(config.MONGODB_URI, {
+// MongoDB connection
+mongoose.connect('mongodb+srv://admin2:qsk51KtuThvJ41TF@bdd-app.1d5eqkc.mongodb.net/?retryWrites=true&w=majority&appName=BDD-APP', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => console.log('Conectado a MongoDB'))
-.catch(err => console.error('No se pudo conectar a MongoDB', err));
+.then(() => console.log('MongoDB connected'))
+.catch(err => console.error('MongoDB connection error:', err));
 
-// Manejo de errores
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Algo salió mal!');
+// Default route
+app.get('/', (req, res) => {
+  res.send('API is running...');
 });
 
-// Iniciar el servidor
 app.listen(PORT, () => {
-  console.log(`Servidor escuchando en el puerto ${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });

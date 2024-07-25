@@ -8,7 +8,7 @@ import { AuthProvider } from './AuthContext';
 import InicioScreen from './screens/InicioScreen';
 import CrearPublicacionScreen from './screens/CrearPublicacionScreen';
 import PerfilScreen from './screens/PerfilScreen';
-import CrearAviso from './screens/CrearAvisoScreen';
+import CrearAvisoScreen from './screens/CrearAvisoScreen';
 import CrearMercado from './screens/CrearMercado';
 import ModeracionScreen from './screens/ModeracionScreen';
 import ReportesScreen from './screens/ReportesScreen';
@@ -26,17 +26,22 @@ const LoginScreen = ({ navigation }) => {
         setErrorMessage('Por favor, ingresa el correo y la contraseña.');
         return;
       }
-
-      const response = await fetch('https://tu-backend-url/api/login', {
+  
+      const response = await fetch('http://localhost:4000/api/auth/signin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
       });
-
+  
+      if (!response.ok) {
+        setErrorMessage('Error al iniciar sesión. Por favor, inténtalo de nuevo.');
+        return;
+      }
+  
       const data = await response.json();
-
+  
       if (data.token) {
         // Almacenar el token en el almacenamiento seguro
         await AsyncStorage.setItem('token', data.token);
@@ -78,7 +83,7 @@ const LoginScreen = ({ navigation }) => {
       <StatusBar style="auto" />
     </View>
   );
-}
+};
 
 const App = () => {
   return (
@@ -101,7 +106,7 @@ const App = () => {
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Inicio" component={InicioScreen} />
             <Stack.Screen name="CrearPublicacion" component={CrearPublicacionScreen} />
-            <Stack.Screen name="CrearAviso" component={CrearAviso} />
+            <Stack.Screen name="CrearAviso" component={CrearAvisoScreen} />
             <Stack.Screen name="Perfil" component={PerfilScreen} />
             <Stack.Screen name="CrearMercado" component={CrearMercado} />
             <Stack.Screen name="Moderación" component={ModeracionScreen} />
@@ -111,7 +116,7 @@ const App = () => {
       </AuthProvider>
     </>
   );
-}
+};
 
 export default App;
 
