@@ -13,6 +13,8 @@ const CrearMercado = () => {
   const [nombre, setNombre] = useState('');
   const [detalle, setDetalle] = useState('');
   const [categoria, setCategoria] = useState('');
+  const [precio, setPrecio] = useState('');
+  const [estado, setEstado] = useState('');
   const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
@@ -75,6 +77,8 @@ const CrearMercado = () => {
         nombre,
         detalle,
         categoria,
+        estado,
+        precio,
         fecha: new Date().toISOString(),
         imagen: imageUrl,
         userId: currentUser.uid,
@@ -86,6 +90,8 @@ const CrearMercado = () => {
       setNombre('');
       setDetalle('');
       setCategoria('');
+      setPrecio('');
+      setEstado('');
       setLoading(false);
       alert('Publicación exitosa!');
     } catch (error) {
@@ -122,6 +128,18 @@ const CrearMercado = () => {
         placeholder="Categoría"
         value={categoria}
         onChangeText={setCategoria}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Precio"
+        value={precio}
+        onChangeText={setPrecio}
+      />
+        <TextInput
+        style={styles.input}
+        placeholder="Estado de venta"
+        value={estado}
+        onChangeText={setEstado}
       />
       <TouchableOpacity style={styles.uploadButton} onPress={handleUpload} disabled={loading}>
         <Text style={styles.uploadButtonText}>Subir Publicación</Text>
