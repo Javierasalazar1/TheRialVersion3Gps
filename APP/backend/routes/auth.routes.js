@@ -18,14 +18,18 @@ router.post('/signin', async (req, res) => {
       return res.status(400).json({ message: 'Usuario no encontrado' });
     }
 
-    // Comparación directa de contraseñas
+    // Comparación directa de contraseñas (deberías usar bcrypt en producción)
     if (password !== user.password) {
       return res.status(400).json({ message: 'Contraseña incorrecta' });
     }
 
     // Si la autenticación es exitosa, genera y envía el token
-    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token });
+    const token = jwt.sign(
+      { id: user._id, roles: user.roles }, // Incluye roles en el payload
+      JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+    res.json({ token, roles: user.roles }); // Incluye roles en la respuesta
   } catch (err) {
     res.status(500).json({ message: 'Error en el servidor' });
   }
