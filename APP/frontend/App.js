@@ -27,14 +27,19 @@ const LoginScreen = ({ navigation }) => {
         setErrorMessage('Por favor, ingresa el correo y la contraseña.');
         return;
       }
-
+  
       const response = await axios.post('http://localhost:4000/api/auth/signin', {
         email,
         password
       });
-
+  
       if (response.status === 200 && response.data.token) {
+        // Almacenar el token en AsyncStorage
         await AsyncStorage.setItem('token', response.data.token);
+        
+        // Almacenar los roles en AsyncStorage
+        await AsyncStorage.setItem('roles', JSON.stringify(response.data.roles));
+  
         setErrorMessage('');
         navigation.navigate('Inicio');
       } else {
@@ -45,6 +50,7 @@ const LoginScreen = ({ navigation }) => {
       setErrorMessage('Error al iniciar sesión. Por favor, inténtalo de nuevo.');
     }
   };
+  
 
   return (
     <View style={styles.container}>
