@@ -36,11 +36,13 @@ const LoginScreen = ({ navigation }) => {
       if (response.status === 200 && response.data.token) {
         // Almacenar el token en AsyncStorage
         await AsyncStorage.setItem('token', response.data.token);
+
           // Almacenar los usuaerios en AsyncStorage
           await AsyncStorage.setItem('username',response.data.username);
         // Almacenar los roles en AsyncStorage
         await AsyncStorage.setItem('roles', response.data.roles); 
       
+
         setErrorMessage('');
 
         console.log('Nombre de usuario:', response.data.username);
