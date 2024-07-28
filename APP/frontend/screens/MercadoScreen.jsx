@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, ActivityIndicator, TouchableOpacity, Alert, Modal, TextInput, Button } from 'react-native';
-import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import { Menu, MenuOptions, MenuOption, MenuTrigger, MenuProvider } from 'react-native-popup-menu';
 import Toast from 'react-native-toast-message';
@@ -29,12 +29,17 @@ const MercadoScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportDetails, setReportDetails] = useState('');
-  const [showReportError, setShowReportError] = useState(false); // Nuevo estado para mostrar el error
-  const [username, setUsername] = useState(''); // Estado para almacenar el nombre de usuario
+
+  const [showReportError, setShowReportError] = useState(false);
+  const [username, setUsername] = useState('');
+  const [optionsModalVisible, setOptionsModalVisible] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editedPost, setEditedPost] = useState({ id: '', nombre: '', detalle: '' });
   
   useEffect(() => {
     fetchPublicaciones();
-    fetchUsername(); // Obtener el nombre de usuario al montar el componente
+    fetchUsername();
+
   }, []);
 
   const fetchUsername = async () => {
@@ -117,9 +122,40 @@ const MercadoScreen = () => {
   };
 
   const handleEditPost = (postId) => {
+
+    const postToEdit = publicaciones.find(post => post.id === postId);
+    if (postToEdit) {
+      setEditedPost({
+        id: postToEdit.id,
+        nombre: postToEdit.nombre,
+        detalle: postToEdit.detalle
+      });
+      setEditModalVisible(true);
+    }
+    setOptionsModalVisible(false);
+  };
+
+  const handleUpdatePost = async () => {
+    try {
+      const db = getFirestore();
+      const postRef = doc(db, 'Mercado', editedPost.id);
+      await updateDoc(postRef, {
+        nombre: editedPost.nombre,
+        detalle: editedPost.detalle
+      });
+      Alert.alert('Publicación actualizada', 'La publicación ha sido actualizada con éxito.');
+      setEditModalVisible(false);
+      fetchPublicaciones(); // Refresh the posts
+    } catch (error) {
+      console.error('Error updating post:', error);
+      Alert.alert('Error', 'Hubo un problema al actualizar la publicación.');
+    }
+
     // Implementa la funcionalidad de edición aquí
     console.log('Editar publicación con ID:', postId);
+
   };
+
 
   const handleDeletePost = async (postId) => {
     try {
@@ -170,6 +206,12 @@ const MercadoScreen = () => {
     return `${day}-${month}-${year}`;
   };
 
+
+  const handleOpenOptions = (itemId) => {
+    setSelectedItemId(itemId);
+    setOptionsModalVisible(true);
+  };
+
   const renderItem = ({ item }) => (
     <View style={styles.item}>
       <View style={styles.header}>
@@ -187,9 +229,11 @@ const MercadoScreen = () => {
           </MenuOptions>
         </Menu>
       </View>
-      <View style={styles.ima}>
-        <Image source={{ uri: item.imagen }} style={styles.image} />
-      </View>
+      {item.imagen ? (
+        <View style={styles.ima}>
+          <Image source={{ uri: item.imagen }} style={styles.image} />
+        </View>
+      ) : null}
       <Text style={styles.title}>{item.nombre}</Text>
       <View style={styles.header}>
         <Text style={styles.userEmail}>{item.detalle}</Text>
@@ -213,7 +257,43 @@ const MercadoScreen = () => {
         />
       </View>
 
+
+      <Modal
+        visible={optionsModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setOptionsModalVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPressOut={() => setOptionsModalVisible(false)}
+        >
+          <View style={styles.optionsModalContent}>
+            <TouchableOpacity 
+              style={styles.optionButton}
+              onPress={() => {
+                handleEditPost(selectedItemId);
+                setOptionsModalVisible(false);
+              }}
+            >
+              <Text style={styles.optionText}>Editar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.optionButton}
+              onPress={() => {
+                handleDeletePost(selectedItemId);
+                setOptionsModalVisible(false);
+              }}
+            >
+              <Text style={styles.optionText}>Eliminar</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       {/* Modal de reporte */}
+
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -254,6 +334,44 @@ const MercadoScreen = () => {
           </View>
         </View>
       </Modal>
+
+
+
+
+            {/* Edit Modal */}
+      <Modal
+        visible={editModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setEditModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Editar publicación</Text>
+            <TextInput
+              style={styles.input}
+              value={editedPost.nombre}
+              onChangeText={(text) => setEditedPost({...editedPost, nombre: text})}
+              placeholder="Título"
+            />
+            <TextInput
+              style={[styles.input, { height: 100 }]}
+              value={editedPost.detalle}
+              onChangeText={(text) => setEditedPost({...editedPost, detalle: text})}
+              placeholder="Detalles"
+              multiline
+            />
+            <View style={styles.modalButtons}>
+              <Button title="Cancelar" onPress={() => setEditModalVisible(false)} color="red" />
+              <Button title="Guardar" onPress={handleUpdatePost} />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+
+
+
       <Toast ref={(ref) => Toast.setRef(ref)} />
     </MenuProvider>
   );
@@ -286,7 +404,7 @@ const styles = StyleSheet.create({
   date: {
     fontSize: 12,
     color: 'gray',
-    minWidth:'100px',
+    minWidth: '100px',
   },
   name: {
     fontSize: 16,
@@ -298,7 +416,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 5,
     color: '#555',
-    maxWidth:'250px',
+    maxWidth: '250px',
   },
   title: {
     fontSize: 20,
@@ -380,6 +498,35 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 10,
   },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  optionsModalContent: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+    elevation: 5,
+  },
+  optionButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    width: '100%',
+  },
+  optionText: {
+    fontSize: 18,
+    textAlign: 'center',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
 });
 
 export default MercadoScreen;
