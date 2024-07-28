@@ -29,6 +29,7 @@ const MercadoScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportDetails, setReportDetails] = useState('');
+<<<<<<< HEAD
 
   const [showReportError, setShowReportError] = useState(false);
   const [username, setUsername] = useState('');
@@ -40,6 +41,14 @@ const MercadoScreen = () => {
     fetchPublicaciones();
     fetchUsername();
 
+=======
+  const [showReportError, setShowReportError] = useState(false); // Nuevo estado para mostrar el error
+  const [username, setUsername] = useState(''); // Estado para almacenar el nombre de usuario
+  
+  useEffect(() => {
+    fetchPublicaciones();
+    fetchUsername(); // Obtener el nombre de usuario al montar el componente
+>>>>>>> fd3ba49f16aa909d5a6091075ea164d474ec11e6
   }, []);
 
   const fetchUsername = async () => {
@@ -122,6 +131,7 @@ const MercadoScreen = () => {
   };
 
   const handleEditPost = (postId) => {
+<<<<<<< HEAD
 
     const postToEdit = publicaciones.find(post => post.id === postId);
     if (postToEdit) {
@@ -154,6 +164,10 @@ const MercadoScreen = () => {
     // Implementa la funcionalidad de edición aquí
     console.log('Editar publicación con ID:', postId);
 
+=======
+    // Implementa la funcionalidad de edición aquí
+    console.log('Editar publicación con ID:', postId);
+>>>>>>> fd3ba49f16aa909d5a6091075ea164d474ec11e6
   };
 
 
@@ -206,12 +220,15 @@ const MercadoScreen = () => {
     return `${day}-${month}-${year}`;
   };
 
+<<<<<<< HEAD
 
   const handleOpenOptions = (itemId) => {
     setSelectedItemId(itemId);
     setOptionsModalVisible(true);
   };
 
+=======
+>>>>>>> fd3ba49f16aa909d5a6091075ea164d474ec11e6
   const renderItem = ({ item }) => (
     <View style={styles.item}>
       <View style={styles.header}>
@@ -229,11 +246,19 @@ const MercadoScreen = () => {
           </MenuOptions>
         </Menu>
       </View>
+<<<<<<< HEAD
       {item.imagen ? (
         <View style={styles.ima}>
           <Image source={{ uri: item.imagen }} style={styles.image} />
         </View>
       ) : null}
+=======
+      {item.imagen && (
+        <View style={styles.ima}>
+          <Image source={{ uri: item.imagen }} style={styles.image} />
+        </View>
+      )}
+>>>>>>> fd3ba49f16aa909d5a6091075ea164d474ec11e6
       <Text style={styles.title}>{item.nombre}</Text>
       <View style={styles.header}>
         <Text style={styles.userEmail}>{item.detalle}</Text>
@@ -256,6 +281,7 @@ const MercadoScreen = () => {
           style={{ flex: 1 }}
         />
       </View>
+<<<<<<< HEAD
 
 
       <Modal
@@ -294,6 +320,10 @@ const MercadoScreen = () => {
 
       {/* Modal de reporte */}
 
+=======
+
+      {/* Modal de reporte */}
+>>>>>>> fd3ba49f16aa909d5a6091075ea164d474ec11e6
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -404,7 +434,11 @@ const styles = StyleSheet.create({
   date: {
     fontSize: 12,
     color: 'gray',
+<<<<<<< HEAD
     minWidth: '100px',
+=======
+    minWidth:'100px',
+>>>>>>> fd3ba49f16aa909d5a6091075ea164d474ec11e6
   },
   name: {
     fontSize: 16,
@@ -416,7 +450,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 5,
     color: '#555',
+<<<<<<< HEAD
     maxWidth: '250px',
+=======
+    maxWidth:'250px',
+>>>>>>> fd3ba49f16aa909d5a6091075ea164d474ec11e6
   },
   title: {
     fontSize: 20,
@@ -498,6 +536,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 10,
   },
+<<<<<<< HEAD
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
@@ -527,6 +566,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
+=======
+>>>>>>> fd3ba49f16aa909d5a6091075ea164d474ec11e6
 });
 
 export default MercadoScreen;
