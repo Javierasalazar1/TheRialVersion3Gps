@@ -25,10 +25,11 @@ const MercadoScreen = () => {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
-  const [selectedItemId, setSelectedItemId] = useState(null);
+  const [selectedItemId, setSelectedItemId] = useState(null); // Estado para almacenar el ID del item seleccionado para reportar
   const [modalVisible, setModalVisible] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportDetails, setReportDetails] = useState('');
+
   const [showReportError, setShowReportError] = useState(false);
   const [username, setUsername] = useState('');
   const [optionsModalVisible, setOptionsModalVisible] = useState(false);
@@ -38,6 +39,7 @@ const MercadoScreen = () => {
   useEffect(() => {
     fetchPublicaciones();
     fetchUsername();
+
   }, []);
 
   const fetchUsername = async () => {
@@ -120,6 +122,7 @@ const MercadoScreen = () => {
   };
 
   const handleEditPost = (postId) => {
+
     const postToEdit = publicaciones.find(post => post.id === postId);
     if (postToEdit) {
       setEditedPost({
@@ -147,6 +150,10 @@ const MercadoScreen = () => {
       console.error('Error updating post:', error);
       Alert.alert('Error', 'Hubo un problema al actualizar la publicación.');
     }
+
+    // Implementa la funcionalidad de edición aquí
+    console.log('Editar publicación con ID:', postId);
+
   };
 
 
@@ -155,7 +162,7 @@ const MercadoScreen = () => {
       const db = getFirestore();
       await deleteDoc(doc(db, 'Mercado', postId));
       Alert.alert('Publicación eliminada', 'La publicación ha sido eliminada con éxito.');
-      fetchPublicaciones();
+      fetchPublicaciones(); // Vuelve a cargar las publicaciones después de eliminar
     } catch (error) {
       console.error('Error eliminando publicación:', error);
       Alert.alert('Error', 'Hubo un problema al eliminar la publicación.');
@@ -171,22 +178,24 @@ const MercadoScreen = () => {
     setModalVisible(false);
     setSelectedItemId(null);
     setReportReason('');
-    setShowReportError(false);
+    setShowReportError(false); // Reiniciar el estado de error al abrir el modal
     setReportDetails('');
   };
 
   const handleReportSubmit = () => {
     if (!reportReason) {
-      setShowReportError(true);
+      setShowReportError(true); // Mostrar mensaje de error si no se ha seleccionado un motivo
       return;
     }
 
+    // Envío del reporte simulado con un Toast para el feedback
     Toast.show({
       type: 'success',
       text1: 'Reporte enviado',
       text2: 'Tu reporte ha sido enviado con éxito.'
     });
 
+    // Cerrar el modal y limpiar los estados
     handleCloseModal();
   };
 
@@ -197,6 +206,7 @@ const MercadoScreen = () => {
     return `${day}-${month}-${year}`;
   };
 
+
   const handleOpenOptions = (itemId) => {
     setSelectedItemId(itemId);
     setOptionsModalVisible(true);
@@ -206,14 +216,18 @@ const MercadoScreen = () => {
     <View style={styles.item}>
       <View style={styles.header}>
         <Text style={styles.name}>{item.usuario}</Text>
-        <View style={styles.headerRight}>
-          <TouchableOpacity onPress={() => handleReportItem(item.id)}>
-            <Ionicons name="flag-outline" size={24} color="red" style={styles.reportIcon} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleOpenOptions(item.id)}>
+        <TouchableOpacity onPress={() => handleReportItem(item.id)}>
+          <Ionicons name="flag-outline" size={24} color="red" style={styles.reportIcon} />
+        </TouchableOpacity>
+        <Menu>
+          <MenuTrigger>
             <Ionicons name="ellipsis-vertical" size={22} color="black" />
-          </TouchableOpacity>
-        </View>
+          </MenuTrigger>
+          <MenuOptions>
+            <MenuOption onSelect={() => handleEditPost(item.id)} text='Editar' />
+            <MenuOption onSelect={() => handleDeletePost(item.id)} text='Eliminar' />
+          </MenuOptions>
+        </Menu>
       </View>
       {item.imagen ? (
         <View style={styles.ima}>
@@ -242,6 +256,7 @@ const MercadoScreen = () => {
           style={{ flex: 1 }}
         />
       </View>
+
 
       <Modal
         visible={optionsModalVisible}
@@ -276,6 +291,8 @@ const MercadoScreen = () => {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Modal de reporte */}
 
       <Modal
         visible={modalVisible}
@@ -509,6 +526,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+
 });
 
 export default MercadoScreen;
