@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Menu, MenuOptions, MenuOption, MenuTrigger, MenuProvider } from 'react-native-popup-menu';
 import Toast from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 const PAGE_SIZE = 10;
 
@@ -34,7 +36,8 @@ const MercadoScreen = () => {
   const [optionsModalVisible, setOptionsModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editedPost, setEditedPost] = useState({ id: '', nombre: '', detalle: '' });
-  
+  const [selectedImage, setSelectedImage] = useState(null);
+
   useEffect(() => {
     fetchPublicaciones();
     fetchUsername();
@@ -136,19 +139,38 @@ const MercadoScreen = () => {
     try {
       const db = getFirestore();
       const postRef = doc(db, 'Mercado', editedPost.id);
+
+      let imageUrl = editedPost.imagen;
+      if (selectedImage) {
+        const storage = getStorage();
+        const imageRef = ref(storage, `images/${Date.now()}_${selectedImage.uri.split('/').pop()}`);
+        const img = await fetch(selectedImage.uri);
+        const bytes = await img.blob();
+
+        await uploadBytes(imageRef, bytes);
+        imageUrl = await getDownloadURL(imageRef);
+
+        if (editedPost.imagen) {
+          const oldImageRef = ref(storage, editedPost.imagen);
+          await deleteObject(oldImageRef);
+        }
+      }
+
       await updateDoc(postRef, {
         nombre: editedPost.nombre,
-        detalle: editedPost.detalle
+        detalle: editedPost.detalle,
+        imagen: imageUrl
       });
+
       Alert.alert('Publicación actualizada', 'La publicación ha sido actualizada con éxito.');
       setEditModalVisible(false);
+      setSelectedImage(null);
       fetchPublicaciones(); // Refresh the posts
     } catch (error) {
       console.error('Error updating post:', error);
       Alert.alert('Error', 'Hubo un problema al actualizar la publicación.');
     }
   };
-
 
   const handleDeletePost = async (postId) => {
     try {
@@ -200,6 +222,19 @@ const MercadoScreen = () => {
   const handleOpenOptions = (itemId) => {
     setSelectedItemId(itemId);
     setOptionsModalVisible(true);
+  };
+
+  const handleImagePicker = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setSelectedImage(result.assets[0]);
+    }
   };
 
   const renderItem = ({ item }) => (
@@ -297,7 +332,7 @@ const MercadoScreen = () => {
                   ]}
                 >
                   <Text style={[styles.reportOptionText, reportReason === reason ? styles.selectedReportOptionText : null]}>{reason}</Text>
-                  </TouchableOpacity>
+                </TouchableOpacity>
               ))}
             </View>
             <TextInput
@@ -344,6 +379,12 @@ const MercadoScreen = () => {
               placeholder="Detalles"
               multiline
             />
+            <View style={styles.imagePickerContainer}>
+              <Button title="Seleccionar Imagen" onPress={handleImagePicker} />
+              {selectedImage && (
+                <Image source={{ uri: selectedImage.uri }} style={styles.selectedImage} />
+              )}
+            </View>
             <View style={styles.modalButtons}>
               <Button title="Cancelar" onPress={() => setEditModalVisible(false)} color="red" />
               <Button title="Guardar" onPress={handleUpdatePost} />
@@ -351,9 +392,6 @@ const MercadoScreen = () => {
           </View>
         </View>
       </Modal>
-
-
-
 
       <Toast ref={(ref) => Toast.setRef(ref)} />
     </MenuProvider>
@@ -508,6 +546,14 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  imagePickerContainer: {
+    marginBottom: 20,
+  },
+  selectedImage: {
+    width: 100,
+    height: 100,
+    marginTop: 10,
   },
 });
 
