@@ -2,11 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image, TextInput, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { uploadFileToStorage } from '../firebasestorage';
 import { getAuth } from 'firebase/auth';
-
-console.log('uploadFileToStorage:', uploadFileToStorage);
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { uploadFileToStorage } from '../firebasestorage'; // Asegúrate de tener esta función correctamente implementada
 
 const CrearMercado = () => {
   const [image, setImage] = useState(null);
@@ -17,11 +15,24 @@ const CrearMercado = () => {
   const [estado, setEstado] = useState('');
   const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [username, setUsername] = useState(''); // Estado para almacenar el nombre de usuario
 
   useEffect(() => {
+
+    const fetchUsername = async () => {
+      try {
+        const storedUsername = await AsyncStorage.getItem('username');
+        if (storedUsername) {
+          setUsername(storedUsername);
+        }
+      } catch (error) {
+        console.error('Error al obtener el nombre de usuario:', error);
+      }
+    };
+
+    fetchUsername();
     const auth = getAuth();
     setCurrentUser(auth.currentUser);
-
     (async () => {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
@@ -30,6 +41,8 @@ const CrearMercado = () => {
     })();
   }, []);
 
+  
+
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -37,7 +50,7 @@ const CrearMercado = () => {
       aspect: [4, 3],
       quality: 1,
     });
-  
+
     if (!result.canceled && result.assets && result.assets.length > 0) {
       setImage(result.assets[0].uri);
     }
@@ -53,12 +66,12 @@ const CrearMercado = () => {
       alert('Debes estar autenticado para crear una publicación.');
       return;
     }
-  
+
     setLoading(true);
     try {
       const db = getFirestore();
       let imageUrl = null;
-  
+
       if (image) {
         try {
           imageUrl = await uploadFileToStorage({
@@ -72,20 +85,21 @@ const CrearMercado = () => {
           throw new Error('Error al subir la imagen: ' + imageError.message);
         }
       }
-  
+
       const docRef = await addDoc(collection(db, 'Mercado'), {
         nombre,
         detalle,
         categoria,
         estado,
         precio,
+        usuario: username, // Incluir el nombre de usuario
         fecha: new Date().toISOString(),
         imagen: imageUrl,
         userId: currentUser.uid,
       });
-  
+
       console.log('Documento agregado con ID: ', docRef.id);
-  
+
       setImage(null);
       setNombre('');
       setDetalle('');
@@ -135,7 +149,7 @@ const CrearMercado = () => {
         value={precio}
         onChangeText={setPrecio}
       />
-        <TextInput
+      <TextInput
         style={styles.input}
         placeholder="Estado de venta"
         value={estado}

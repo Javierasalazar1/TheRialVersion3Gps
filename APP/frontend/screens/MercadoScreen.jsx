@@ -4,6 +4,7 @@ import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs, d
 import { Ionicons } from '@expo/vector-icons';
 import { Menu, MenuOptions, MenuOption, MenuTrigger, MenuProvider } from 'react-native-popup-menu';
 import Toast from 'react-native-toast-message';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const PAGE_SIZE = 10;
 
@@ -30,10 +31,23 @@ const MercadoScreen = () => {
   const [reportReason, setReportReason] = useState('');
   const [reportDetails, setReportDetails] = useState('');
   const [showReportError, setShowReportError] = useState(false); // Nuevo estado para mostrar el error
+  const [username, setUsername] = useState(''); // Estado para almacenar el nombre de usuario
   
   useEffect(() => {
     fetchPublicaciones();
+    fetchUsername(); // Obtener el nombre de usuario al montar el componente
   }, []);
+
+  const fetchUsername = async () => {
+    try {
+      const storedUsername = await AsyncStorage.getItem('username');
+      if (storedUsername) {
+        setUsername(JSON.parse(storedUsername));
+      }
+    } catch (error) {
+      console.error('Error fetching username:', error);
+    }
+  };
 
   const fetchPublicaciones = async () => {
     try {
@@ -44,8 +58,8 @@ const MercadoScreen = () => {
 
       const publicacionesList = publicacionesSnapshot.docs.map(docSnapshot => {
         const data = docSnapshot.data();
-        const fecha = data.fecha && typeof data.fecha.toDate === 'function'
-          ? data.fecha.toDate().toLocaleDateString()
+        const fecha = data.fecha
+          ? formatFecha(new Date(data.fecha))
           : 'Fecha desconocida';
         return {
           id: docSnapshot.id,
@@ -82,8 +96,8 @@ const MercadoScreen = () => {
 
       const publicacionesList = publicacionesSnapshot.docs.map(docSnapshot => {
         const data = docSnapshot.data();
-        const fecha = data.fecha && typeof data.fecha.toDate === 'function'
-          ? data.fecha.toDate().toLocaleDateString()
+        const fecha = data.fecha
+          ? formatFecha(new Date(data.fecha))
           : 'Fecha desconocida';
         return {
           id: docSnapshot.id,
@@ -148,6 +162,13 @@ const MercadoScreen = () => {
 
     // Cerrar el modal y limpiar los estados
     handleCloseModal();
+  };
+
+  const formatFecha = (fecha) => {
+    const day = ("0" + fecha.getDate()).slice(-2);
+    const month = ("0" + (fecha.getMonth() + 1)).slice(-2);
+    const year = fecha.getFullYear();
+    return `${day}-${month}-${year}`;
   };
 
   const renderItem = ({ item }) => (
