@@ -14,9 +14,8 @@ const reportReasons = [
   "Fraude",
   "Incitación al odio",
   "Información falsa",
+  "Contenido sexual",
   "Acoso",
-  "No le gusta el queso",
-  "No le gusta Nintendo",
   "Otro"
 ];
 
@@ -26,18 +25,28 @@ const MercadoScreen = () => {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
-  const [selectedItemId, setSelectedItemId] = useState(null);
+  const [selectedItemId, setSelectedItemId] = useState(null); // Estado para almacenar el ID del item seleccionado para reportar
   const [modalVisible, setModalVisible] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportDetails, setReportDetails] = useState('');
-  const [showReportError, setShowReportError] = useState(false);
-  const [optionsModalVisible, setOptionsModalVisible] = useState(false);
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editData, setEditData] = useState({ nombre: '', detalle: '', imagen: '' });
+  const [showReportError, setShowReportError] = useState(false); // Nuevo estado para mostrar el error
+  const [username, setUsername] = useState(''); // Estado para almacenar el nombre de usuario
   
   useEffect(() => {
     fetchPublicaciones();
+    fetchUsername(); // Obtener el nombre de usuario al montar el componente
   }, []);
+
+  const fetchUsername = async () => {
+    try {
+      const storedUsername = await AsyncStorage.getItem('username');
+      if (storedUsername) {
+        setUsername(JSON.parse(storedUsername));
+      }
+    } catch (error) {
+      console.error('Error fetching username:', error);
+    }
+  };
 
   const fetchPublicaciones = async () => {
     try {
@@ -48,8 +57,8 @@ const MercadoScreen = () => {
 
       const publicacionesList = publicacionesSnapshot.docs.map(docSnapshot => {
         const data = docSnapshot.data();
-        const fecha = data.fecha && typeof data.fecha.toDate === 'function'
-          ? data.fecha.toDate().toLocaleDateString()
+        const fecha = data.fecha
+          ? formatFecha(new Date(data.fecha))
           : 'Fecha desconocida';
         return {
           id: docSnapshot.id,
@@ -86,8 +95,8 @@ const MercadoScreen = () => {
 
       const publicacionesList = publicacionesSnapshot.docs.map(docSnapshot => {
         const data = docSnapshot.data();
-        const fecha = data.fecha && typeof data.fecha.toDate === 'function'
-          ? data.fecha.toDate().toLocaleDateString()
+        const fecha = data.fecha
+          ? formatFecha(new Date(data.fecha))
           : 'Fecha desconocida';
         return {
           id: docSnapshot.id,
@@ -108,30 +117,8 @@ const MercadoScreen = () => {
   };
 
   const handleEditPost = (postId) => {
-    const post = publicaciones.find(pub => pub.id === postId);
-    if (post) {
-      setEditData({ nombre: post.nombre, detalle: post.detalle, imagen: post.imagen });
-      setSelectedItemId(postId);
-      setEditModalVisible(true);
-    }
-  };
-
-  const handleUpdatePost = async () => {
-    try {
-      const db = getFirestore();
-      const postRef = doc(db, 'Mercado', selectedItemId);
-      await updateDoc(postRef, {
-        nombre: editData.nombre,
-        detalle: editData.detalle,
-        imagen: editData.imagen
-      });
-      Alert.alert('Publicación actualizada', 'La publicación ha sido actualizada con éxito.');
-      fetchPublicaciones();
-      setEditModalVisible(false);
-    } catch (error) {
-      console.error('Error actualizando publicación:', error);
-      Alert.alert('Error', 'Hubo un problema al actualizar la publicación.');
-    }
+    // Implementa la funcionalidad de edición aquí
+    console.log('Editar publicación con ID:', postId);
   };
 
   const handleDeletePost = async (postId) => {
@@ -139,7 +126,7 @@ const MercadoScreen = () => {
       const db = getFirestore();
       await deleteDoc(doc(db, 'Mercado', postId));
       Alert.alert('Publicación eliminada', 'La publicación ha sido eliminada con éxito.');
-      fetchPublicaciones();
+      fetchPublicaciones(); // Vuelve a cargar las publicaciones después de eliminar
     } catch (error) {
       console.error('Error eliminando publicación:', error);
       Alert.alert('Error', 'Hubo un problema al eliminar la publicación.');
@@ -155,61 +142,56 @@ const MercadoScreen = () => {
     setModalVisible(false);
     setSelectedItemId(null);
     setReportReason('');
-    setShowReportError(false);
+    setShowReportError(false); // Reiniciar el estado de error al abrir el modal
     setReportDetails('');
   };
 
   const handleReportSubmit = () => {
     if (!reportReason) {
-      setShowReportError(true);
+      setShowReportError(true); // Mostrar mensaje de error si no se ha seleccionado un motivo
       return;
     }
 
+    // Envío del reporte simulado con un Toast para el feedback
     Toast.show({
       type: 'success',
       text1: 'Reporte enviado',
       text2: 'Tu reporte ha sido enviado con éxito.'
     });
 
+    // Cerrar el modal y limpiar los estados
     handleCloseModal();
   };
 
-  const handleOpenOptions = (itemId) => {
-    setSelectedItemId(itemId);
-    setOptionsModalVisible(true);
-  };
-
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setEditData({ ...editData, imagen: result.uri });
-    }
+  const formatFecha = (fecha) => {
+    const day = ("0" + fecha.getDate()).slice(-2);
+    const month = ("0" + (fecha.getMonth() + 1)).slice(-2);
+    const year = fecha.getFullYear();
+    return `${day}-${month}-${year}`;
   };
 
   const renderItem = ({ item }) => (
     <View style={styles.item}>
       <View style={styles.header}>
         <Text style={styles.name}>{item.usuario}</Text>
-        <View style={styles.headerRight}>
-          <TouchableOpacity onPress={() => handleReportItem(item.id)}>
-            <Ionicons name="flag-outline" size={24} color="red" style={styles.reportIcon} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleOpenOptions(item.id)}>
+        <TouchableOpacity onPress={() => handleReportItem(item.id)}>
+          <Ionicons name="flag-outline" size={24} color="red" style={styles.reportIcon} />
+        </TouchableOpacity>
+        <Menu>
+          <MenuTrigger>
             <Ionicons name="ellipsis-vertical" size={22} color="black" />
-          </TouchableOpacity>
-        </View>
+          </MenuTrigger>
+          <MenuOptions>
+            <MenuOption onSelect={() => handleEditPost(item.id)} text='Editar' />
+            <MenuOption onSelect={() => handleDeletePost(item.id)} text='Eliminar' />
+          </MenuOptions>
+        </Menu>
       </View>
       <View style={styles.ima}>
         <Image source={{ uri: item.imagen }} style={styles.image} />
       </View>
       <Text style={styles.title}>{item.nombre}</Text>
-      <View style={styles.footer}>
+      <View style={styles.header}>
         <Text style={styles.userEmail}>{item.detalle}</Text>
         <Text style={styles.date}>{item.fecha}</Text>
       </View>
@@ -217,94 +199,21 @@ const MercadoScreen = () => {
   );
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={publicaciones}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
-        onEndReached={fetchMorePublicaciones}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#0000ff" />}
-        contentContainerStyle={{ flexGrow: 1 }}
-        style={{ flex: 1 }}
-      />
+    <MenuProvider>
+      <View style={styles.container}>
+        <FlatList
+          data={publicaciones}
+          renderItem={renderItem}
+          keyExtractor={item => item.id}
+          onEndReached={fetchMorePublicaciones}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#0000ff" />}
+          contentContainerStyle={{ flexGrow: 1 }}
+          style={{ flex: 1 }}
+        />
+      </View>
 
-      {/* Modal para opciones de editar y eliminar */}
-      <Modal
-        visible={optionsModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setOptionsModalVisible(false)}
-      >
-        <TouchableOpacity 
-          style={styles.modalOverlay} 
-          activeOpacity={1} 
-          onPressOut={() => setOptionsModalVisible(false)}
-        >
-          <View style={styles.optionsModalContent}>
-            <TouchableOpacity 
-              style={styles.optionButton}
-              onPress={() => {
-                handleEditPost(selectedItemId);
-                setOptionsModalVisible(false);
-              }}
-            >
-              <Text style={styles.optionText}>Editar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.optionButton}
-              onPress={() => {
-                handleDeletePost(selectedItemId);
-                setOptionsModalVisible(false);
-              }}
-            >
-              <Text style={styles.optionText}>Eliminar</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
-
-      {/* Modal para editar publicación */}
-      <Modal
-        visible={editModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setEditModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Editar Publicación</Text>
-            <TextInput
-              style={styles.input}
-              value={editData.nombre}
-              onChangeText={text => setEditData({ ...editData, nombre: text })}
-              placeholder="Nombre"
-            />
-            <TextInput
-              style={styles.input}
-              value={editData.detalle}
-              onChangeText={text => setEditData({ ...editData, detalle: text })}
-              placeholder="Detalle"
-              multiline
-            />
-            <View style={styles.imagePicker}>
-              <Button title="Subir Nueva Imagen" onPress={pickImage} />
-              {editData.imagen ? (
-                <View style={styles.imagePreview}>
-                  <Image source={{ uri: editData.imagen }} style={styles.previewImage} />
-                  <Button title="Borrar Imagen" onPress={() => setEditData({ ...editData, imagen: '' })} color="red" />
-                </View>
-              ) : null}
-            </View>
-            <View style={styles.modalButtons}>
-              <Button title="Cancelar" onPress={() => setEditModalVisible(false)} color="red" />
-              <Button title="Actualizar" onPress={handleUpdatePost} />
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Modal existente para reportar */}
+      {/* Modal de reporte */}
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -325,7 +234,7 @@ const MercadoScreen = () => {
                   ]}
                 >
                   <Text style={[styles.reportOptionText, reportReason === reason ? styles.selectedReportOptionText : null]}>{reason}</Text>
-                </TouchableOpacity>
+                  </TouchableOpacity>
               ))}
             </View>
             <TextInput
@@ -346,7 +255,7 @@ const MercadoScreen = () => {
         </View>
       </Modal>
       <Toast ref={(ref) => Toast.setRef(ref)} />
-    </View>
+    </MenuProvider>
   );
 };
 
@@ -371,26 +280,25 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     justifyContent: 'space-between',
   },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   ima: {
     alignItems: 'center',
   },
   date: {
     fontSize: 12,
     color: 'gray',
+    minWidth:'100px',
   },
   name: {
     fontSize: 16,
     fontWeight: 'bold',
+    flex: 1,
   },
   userEmail: {
     fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 5,
     color: '#555',
+    maxWidth:'250px',
   },
   title: {
     fontSize: 20,
@@ -423,10 +331,16 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
   },
+  modalLabel: {
+    fontSize: 16,
+    marginBottom: 5,
+    alignSelf: 'flex-start',
+  },
   input: {
     borderColor: '#ccc',
     borderWidth: 1,
     borderRadius: 5,
+    minHeight: 100,
     padding: 10,
     marginTop: 10,
     marginBottom: 20,
@@ -465,44 +379,6 @@ const styles = StyleSheet.create({
     color: 'red',
     textAlign: 'center',
     marginTop: 10,
-  },
-
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  optionsModalContent: {
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 20,
-    alignItems: 'center',
-    elevation: 5,
-  },
-  optionButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    width: '100%',
-  },
-  optionText: {
-    fontSize: 18,
-    textAlign: 'center',
-  },
-  imagePicker: {
-    marginBottom: 20,
-  },
-  imagePreview: {
-    marginTop: 10,
-    alignItems: 'center',
-  },
-  previewImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 10,
-    marginBottom: 10,
   },
 });
 
