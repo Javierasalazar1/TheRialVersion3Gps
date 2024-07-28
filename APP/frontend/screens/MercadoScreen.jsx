@@ -14,9 +14,8 @@ const reportReasons = [
   "Fraude",
   "Incitación al odio",
   "Información falsa",
+  "Contenido sexual",
   "Acoso",
-  "No le gusta el queso",
-  "No le gusta Nintendo",
   "Otro"
 ];
 
