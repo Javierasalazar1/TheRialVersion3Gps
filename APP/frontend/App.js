@@ -36,11 +36,16 @@ const LoginScreen = ({ navigation }) => {
       if (response.status === 200 && response.data.token) {
         // Almacenar el token en AsyncStorage
         await AsyncStorage.setItem('token', response.data.token);
-        
+
+          // Almacenar los usuaerios en AsyncStorage
+          await AsyncStorage.setItem('username',response.data.username);
         // Almacenar los roles en AsyncStorage
-        await AsyncStorage.setItem('roles', JSON.stringify(response.data.roles));
-  
+        await AsyncStorage.setItem('roles', response.data.roles); 
+      
+
         setErrorMessage('');
+
+        console.log('Nombre de usuario:', response.data.username);
         navigation.navigate('Inicio');
       } else {
         setErrorMessage('Error al iniciar sesión. Por favor, inténtalo de nuevo.');
