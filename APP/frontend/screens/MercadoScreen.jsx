@@ -279,6 +279,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
+    justifyContent: 'space-between',
   },
   ima: {
     alignItems: 'center',
@@ -286,6 +287,7 @@ const styles = StyleSheet.create({
   date: {
     fontSize: 12,
     color: 'gray',
+    minWidth:'100px',
   },
   name: {
     fontSize: 16,
@@ -297,6 +299,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 5,
     color: '#555',
+    maxWidth:'250px',
   },
   title: {
     fontSize: 20,

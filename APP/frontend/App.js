@@ -39,7 +39,7 @@ const LoginScreen = ({ navigation }) => {
           // Almacenar los usuaerios en AsyncStorage
           await AsyncStorage.setItem('username',response.data.username);
         // Almacenar los roles en AsyncStorage
-        await AsyncStorage.setItem('roles', JSON.stringify(response.data.roles)); 
+        await AsyncStorage.setItem('roles', response.data.roles); 
       
         setErrorMessage('');
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image, TextInput, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Image, TextInput, ScrollView, Picker } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { getFirestore, collection, addDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, getDocs } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { uploadFileToStorage } from '../firebasestorage'; // Asegúrate de tener esta función correctamente implementada
@@ -11,14 +11,24 @@ const CrearMercado = () => {
   const [nombre, setNombre] = useState('');
   const [detalle, setDetalle] = useState('');
   const [categoria, setCategoria] = useState('');
+  const [categorias, setCategorias] = useState([
+    "Libros y Materiales de Estudio",
+    "Electrónica y Accesorios",
+    "Ropa y Accesorios",
+    "Hogar y Dormitorio",
+    "Deportes y Actividades al Aire Libre",
+    "Transporte",
+    "Entretenimiento y Ocio",
+    "Salud y Belleza",
+    "Servicios"
+  ]);
   const [precio, setPrecio] = useState('');
-  const [estado, setEstado] = useState('');
+  const [estado, setEstado] = useState(true); // Estado booleano
   const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [username, setUsername] = useState(''); // Estado para almacenar el nombre de usuario
 
   useEffect(() => {
-
     const fetchUsername = async () => {
       try {
         const storedUsername = await AsyncStorage.getItem('username');
@@ -40,8 +50,6 @@ const CrearMercado = () => {
       }
     })();
   }, []);
-
-  
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -105,13 +113,20 @@ const CrearMercado = () => {
       setDetalle('');
       setCategoria('');
       setPrecio('');
-      setEstado('');
+      setEstado(true);
       setLoading(false);
       alert('Publicación exitosa!');
     } catch (error) {
       console.error('Error al subir la publicación:', error);
       setLoading(false);
       alert('Hubo un error al subir la publicación: ' + error.message);
+    }
+  };
+
+  const handlePrecioChange = (text) => {
+    const precioNumerico = text.replace(/[^0-9]/g, '');
+    if (precioNumerico.length <= 8) {
+      setPrecio(precioNumerico);
     }
   };
 
@@ -129,31 +144,39 @@ const CrearMercado = () => {
         placeholder="Nombre"
         value={nombre}
         onChangeText={setNombre}
+        maxLength={40} // Limite de 40 caracteres
       />
       <TextInput
         style={styles.input}
         placeholder="Detalle"
         value={detalle}
         onChangeText={setDetalle}
+        maxLength={300} // Limite de 300 caracteres
         multiline
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Categoría"
-        value={categoria}
-        onChangeText={setCategoria}
-      />
+      <View style={styles.input}>
+        <Picker
+          selectedValue={categoria}
+          onValueChange={(itemValue, itemIndex) => setCategoria(itemValue)}
+        >
+          <Picker.Item label="Selecciona una categoría" value="" />
+          {categorias.map((cat, index) => (
+            <Picker.Item key={index} label={cat} value={cat} />
+          ))}
+        </Picker>
+      </View>
       <TextInput
         style={styles.input}
         placeholder="Precio"
-        value={precio}
-        onChangeText={setPrecio}
+        value={`$${precio}`}
+        onChangeText={handlePrecioChange}
+        keyboardType="numeric" // Solo aceptar números
       />
       <TextInput
-        style={styles.input}
+        style={[styles.input, styles.disabledInput]}
         placeholder="Estado de venta"
-        value={estado}
-        onChangeText={setEstado}
+        value="Estado de venta: Activa"
+        editable={false} // Campo deshabilitado
       />
       <TouchableOpacity style={styles.uploadButton} onPress={handleUpload} disabled={loading}>
         <Text style={styles.uploadButtonText}>Subir Publicación</Text>
@@ -191,6 +214,9 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 10,
     marginBottom: 20,
+  },
+  disabledInput: {
+    backgroundColor: '#f0f0f0',
   },
   uploadButton: {
     backgroundColor: '#6a1b9a',
