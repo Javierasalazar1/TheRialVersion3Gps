@@ -4,6 +4,8 @@ import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs, g
 import Toast from 'react-native-toast-message';
 import { Ionicons } from '@expo/vector-icons';
 
+
+
 const PAGE_SIZE = 10;
 const screenWidth = Dimensions.get('window').width;
 
@@ -40,7 +42,7 @@ const PublicacionesScreen = () => {
         return {
           id: docSnapshot.id,
           ...data,
-          userName: data.username || 'Usuario desconocido' // Usa el campo username del documento
+          userName: data.username || 'Usuario desconocido', // Usa el campo username del documento
         };
       });
   
@@ -194,11 +196,12 @@ const PublicacionesScreen = () => {
     <View style={styles.item}>
       <View style={styles.itemContent}>
         <View style={styles.itemText}>
-          <Text style={styles.userName}>Creado por: {item.userName}</Text>
+          <Text style={styles.userName}> {item.userName}</Text>
           {item.imagen && <Image source={{ uri: item.imagen }} style={styles.image} onError={(e) => console.log('Error al cargar la imagen:', e.nativeEvent.error)} />}
           <Text style={styles.title}>{item.nombre}</Text>
           <Text style={styles.detail}>{item.detalle}</Text>
           <Text style={styles.category}>{item.categoria}</Text>
+          <Text style={styles.date}>{item.fecha}</Text> {/* Muestra la fecha formateada */}
         </View>
         <View style={styles.iconContainer}>
           <TouchableOpacity onPress={() => openReportModal(item.id)} style={styles.iconButton}>

@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { uploadFileToStorage } from '../firebasestorage'; // Asegúrate de que esta función esté correctamente implementada
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CrearAvisoScreen = () => {
   const [image, setImage] = useState(null);
@@ -11,10 +12,25 @@ const CrearAvisoScreen = () => {
   const [contenido, setContenido] = useState('');
   const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [username, setUsername] = useState('');
 
   useEffect(() => {
-    const auth = getAuth();
-    setCurrentUser(auth.currentUser);
+    const fetchUserData = async () => {
+      const auth = getAuth();
+      setCurrentUser(auth.currentUser);
+
+      // Recupera el nombre de usuario desde AsyncStorage
+      try {
+        const storedUsername = await AsyncStorage.getItem('username');
+        if (storedUsername) {
+          setUsername(storedUsername);
+        }
+      } catch (error) {
+        console.error('Error al recuperar el nombre de usuario:', error);
+      }
+    };
+
+    fetchUserData();
 
     (async () => {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -73,6 +89,7 @@ const CrearAvisoScreen = () => {
         fecha: new Date().toISOString(),
         imagen: imageUrl,
         userId: currentUser.uid,
+        username: username, // Almacena el nombre de usuario en el documento
       });
   
       console.log('Documento agregado con ID: ', docRef.id);
