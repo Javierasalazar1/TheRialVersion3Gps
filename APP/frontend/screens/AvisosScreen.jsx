@@ -129,7 +129,7 @@ const AvisosScreen = () => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#143d5c" />
         <Text style={styles.text}>Cargando avisos...</Text>
       </View>
     );
@@ -151,7 +151,7 @@ const AvisosScreen = () => {
         keyExtractor={item => item.id}
         onEndReached={fetchMoreAvisos}
         onEndReachedThreshold={0.5}
-        ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#0000ff" />}
+        ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#143d5c" />}
         contentContainerStyle={styles.flatlistContent}
       />
       {selectedAviso && (
@@ -175,7 +175,6 @@ const AvisosScreen = () => {
           </View>
         </Modal>
       )}
-
       <Modal
         animationType="slide"
         transparent={true}
@@ -185,7 +184,6 @@ const AvisosScreen = () => {
         <View style={styles.reportModalContainer}>
           <View style={styles.reportModalContent}>
             <Text style={styles.reportTitle}>Reportar Aviso</Text>
-
             <View style={styles.reasonsContainer}>
               {reportReasons.map((reason, index) => (
                 <TouchableOpacity
@@ -205,7 +203,6 @@ const AvisosScreen = () => {
                 </TouchableOpacity>
               ))}
             </View>
-
             <TextInput
               style={styles.reportInput}
               placeholder="Detalles adicionales (opcional)"
@@ -218,7 +215,7 @@ const AvisosScreen = () => {
             )}
             <View style={styles.reportButtonContainer}>
               <Button title="Cancelar" color="red" onPress={() => setReportModalVisible(false)} />
-              <Button title="Enviar" onPress={handleReportSubmit} />
+              <Button title="Enviar" color='143d5c' onPress={handleReportSubmit} />
             </View>
           </View>
         </View>

@@ -207,7 +207,7 @@ const MercadoScreen = () => {
           keyExtractor={item => item.id}
           onEndReached={fetchMorePublicaciones}
           onEndReachedThreshold={0.5}
-          ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#0000ff" />}
+          ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#143d5c" />}
           contentContainerStyle={{ flexGrow: 1 }}
           style={{ flex: 1 }}
         />

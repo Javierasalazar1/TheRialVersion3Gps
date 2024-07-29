@@ -190,7 +190,7 @@ const PublicacionesScreen = () => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#143d5c" />
         <Text style={styles.text}>Cargando publicaciones...</Text>
       </View>
     );
@@ -212,7 +212,7 @@ const PublicacionesScreen = () => {
         keyExtractor={item => item.id}
         onEndReached={fetchMorePublicaciones}
         onEndReachedThreshold={0.5}
-        ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#0000ff" />}
+        ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#143d5c" />}
         contentContainerStyle={styles.flatlistContent}
       />
 
