@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, ActivityIndicator, TouchableOpacity, Modal, TextInput, Dimensions } from 'react-native';
-import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs, getDoc, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { View, Text, StyleSheet, FlatList, Image, ActivityIndicator, TouchableOpacity, Modal, TextInput } from 'react-native';
+import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs, getDoc, doc, addDoc } from 'firebase/firestore';
 import Toast from 'react-native-toast-message';
 import { Ionicons } from '@expo/vector-icons';
 
 const PAGE_SIZE = 10;
-const screenWidth = Dimensions.get('window').width;
 
 const PublicacionesScreen = () => {
   const [publicaciones, setPublicaciones] = useState([]);
@@ -17,33 +16,48 @@ const PublicacionesScreen = () => {
   const [selectedReason, setSelectedReason] = useState('');
   const [additionalInfo, setAdditionalInfo] = useState('');
   const [selectedPublication, setSelectedPublication] = useState(null);
-  const [showReportError, setShowReportError] = useState(false);
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editingPublication, setEditingPublication] = useState(null);
-  const [optionsModalVisible, setOptionsModalVisible] = useState(false);
+  const [showReportError, setShowReportError] = useState(false); // Nuevo estado para mostrar el error
 
   useEffect(() => {
     fetchPublicaciones();
   }, []);
 
-  
   const fetchPublicaciones = async () => {
     try {
       const db = getFirestore();
       const publicacionesCollection = collection(db, 'publicaciones');
       const publicacionesQuery = query(publicacionesCollection, orderBy('fecha', 'desc'), limit(PAGE_SIZE));
       const publicacionesSnapshot = await getDocs(publicacionesQuery);
-  
-      const publicacionesList = publicacionesSnapshot.docs.map(docSnapshot => {
+
+      const publicacionesList = await Promise.all(publicacionesSnapshot.docs.map(async (docSnapshot) => {
         const data = docSnapshot.data();
-        // Asegúrate de que el campo username exista en el documento de publicación
-        return {
-          id: docSnapshot.id,
-          ...data,
-          userName: data.username || 'Usuario desconocido' // Usa el campo username del documento
-        };
-      });
-  
+        if (!data.userId) {
+          console.warn(`La publicación ${docSnapshot.id} no tiene userId`);
+          return {
+            id: docSnapshot.id,
+            ...data,
+            userEmail: 'Usuario desconocido'
+          };
+        }
+        try {
+          const userDocRef = doc(db, 'users', data.userId);
+          const userDocSnapshot = await getDoc(userDocRef);
+          const userData = userDocSnapshot.data();
+          return {
+            id: docSnapshot.id,
+            ...data,
+            userEmail: userData ? userData.email : 'Usuario desconocido'
+          };
+        } catch (userError) {
+          console.error(`Error al obtener datos del usuario para la publicación ${docSnapshot.id}:`, userError);
+          return {
+            id: docSnapshot.id,
+            ...data,
+            userEmail: 'Error al obtener usuario'
+          };
+        }
+      }));
+
       setPublicaciones(publicacionesList);
       setLastVisible(publicacionesSnapshot.docs[publicacionesSnapshot.docs.length - 1]);
     } catch (error) {
@@ -53,10 +67,10 @@ const PublicacionesScreen = () => {
       setLoading(false);
     }
   };
-  
+
   const fetchMorePublicaciones = async () => {
     if (!lastVisible || loadingMore) return;
-  
+
     setLoadingMore(true);
     try {
       const db = getFirestore();
@@ -68,17 +82,36 @@ const PublicacionesScreen = () => {
         limit(PAGE_SIZE)
       );
       const publicacionesSnapshot = await getDocs(publicacionesQuery);
-  
-      const publicacionesList = publicacionesSnapshot.docs.map(docSnapshot => {
+
+      const publicacionesList = await Promise.all(publicacionesSnapshot.docs.map(async (docSnapshot) => {
         const data = docSnapshot.data();
-        // Asegúrate de que el campo username exista en el documento de publicación
-        return {
-          id: docSnapshot.id,
-          ...data,
-          userName: data.username || 'Usuario desconocido' // Usa el campo username del documento
-        };
-      });
-  
+        if (!data.userId) {
+          console.warn(`La publicación ${docSnapshot.id} no tiene userId`);
+          return {
+            id: docSnapshot.id,
+            ...data,
+            userEmail: 'Usuario desconocido'
+          };
+        }
+        try {
+          const userDocRef = doc(db, 'users', data.userId);
+          const userDocSnapshot = await getDoc(userDocRef);
+          const userData = userDocSnapshot.data();
+          return {
+            id: docSnapshot.id,
+            ...data,
+            userEmail: userData ? userData.email : 'Usuario desconocido'
+          };
+        } catch (userError) {
+          console.error(`Error al obtener datos del usuario para la publicación ${docSnapshot.id}:`, userError);
+          return {
+            id: docSnapshot.id,
+            ...data,
+            userEmail: 'Error al obtener usuario'
+          };
+        }
+      }));
+
       setPublicaciones(prevPublicaciones => [...prevPublicaciones, ...publicacionesList]);
       setLastVisible(publicacionesSnapshot.docs[publicacionesSnapshot.docs.length - 1]);
     } catch (error) {
@@ -88,7 +121,7 @@ const PublicacionesScreen = () => {
       setLoadingMore(false);
     }
   };
-  
+
   const reportReasons = [
     "Contenido inapropiado",
     "Spam",
@@ -102,7 +135,7 @@ const PublicacionesScreen = () => {
 
   const handleReport = async () => {
     if (!selectedReason) {
-      setShowReportError(true);
+      setShowReportError(true); // Mostrar mensaje de error si no se ha seleccionado un motivo
       return;
     }
 
@@ -137,80 +170,19 @@ const PublicacionesScreen = () => {
     setModalVisible(true);
   };
 
-  const openEditModal = (publication) => {
-    setEditingPublication(publication);
-    setEditModalVisible(true);
-    setOptionsModalVisible(false);
-  };
-
-  const handleEdit = async () => {
-    try {
-      const db = getFirestore();
-      const publicationRef = doc(db, 'publicaciones', editingPublication.id);
-      await updateDoc(publicationRef, {
-        nombre: editingPublication.nombre,
-        detalle: editingPublication.detalle,
-        categoria: editingPublication.categoria,
-      });
-
-      Toast.show({
-        type: 'success',
-        text1: 'Publicación actualizada con éxito',
-      });
-
-      setEditModalVisible(false);
-      fetchPublicaciones();
-    } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error al actualizar la publicación',
-        text2: error.message,
-      });
-    }
-  };
-
-  const handleDelete = async (publicationId) => {
-    try {
-      const db = getFirestore();
-      await deleteDoc(doc(db, 'publicaciones', publicationId));
-
-      Toast.show({
-        type: 'success',
-        text1: 'Publicación eliminada con éxito',
-      });
-
-      setPublicaciones(prevPublicaciones => prevPublicaciones.filter(pub => pub.id !== publicationId));
-    } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error al eliminar la publicación',
-        text2: error.message,
-      });
-    }
-    setOptionsModalVisible(false);
-  };
-
   const renderItem = ({ item }) => (
     <View style={styles.item}>
       <View style={styles.itemContent}>
         <View style={styles.itemText}>
-          <Text style={styles.userName}>Creado por: {item.userName}</Text>
-          {item.imagen && <Image source={{ uri: item.imagen }} style={styles.image} onError={(e) => console.log('Error al cargar la imagen:', e.nativeEvent.error)} />}
+          <Text style={styles.userEmail}>{item.userEmail}</Text>
+          {item.imagen ? <Image source={{ uri: item.imagen }} style={styles.image} onError={(e) => console.log('Error al cargar la imagen:', e.nativeEvent.error)} /> : null}
           <Text style={styles.title}>{item.nombre}</Text>
           <Text style={styles.detail}>{item.detalle}</Text>
           <Text style={styles.category}>{item.categoria}</Text>
         </View>
-        <View style={styles.iconContainer}>
-          <TouchableOpacity onPress={() => openReportModal(item.id)} style={styles.iconButton}>
-            <Ionicons name="flag-outline" size={24} color="red" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => {
-            setSelectedPublication(item);
-            setOptionsModalVisible(true);
-          }} style={styles.iconButton}>
-            <Ionicons name="ellipsis-vertical" size={24} color="black" />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity onPress={() => openReportModal(item.id)} style={styles.flagIcon}>
+          <Ionicons name="flag-outline" size={24} color="red" />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -218,7 +190,7 @@ const PublicacionesScreen = () => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#143d5c" />
         <Text style={styles.text}>Cargando publicaciones...</Text>
       </View>
     );
@@ -240,10 +212,9 @@ const PublicacionesScreen = () => {
         keyExtractor={item => item.id}
         onEndReached={fetchMorePublicaciones}
         onEndReachedThreshold={0.5}
-        ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#0000ff" />}
+        ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#143d5c" />}
         contentContainerStyle={styles.flatlistContent}
       />
-
       <Modal
         visible={modalVisible}
         transparent={true}
@@ -253,7 +224,6 @@ const PublicacionesScreen = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>Reportar Publicación</Text>
-            
             <View style={styles.reportContainer}>
               {reportReasons.map((reason, index) => (
                 <TouchableOpacity
@@ -273,7 +243,6 @@ const PublicacionesScreen = () => {
                 </TouchableOpacity>
               ))}
             </View>
-
             <TextInput
               style={styles.reportInput}
               multiline
@@ -281,84 +250,20 @@ const PublicacionesScreen = () => {
               value={additionalInfo}
               onChangeText={setAdditionalInfo}
             />
-            {showReportError && (
+{showReportError && (
               <Text style={styles.errorText}>Selecciona un motivo antes de enviar el reporte.</Text>
             )}
             <View style={styles.buttonContainer}>
               <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(false)}>
                 <Text style={styles.cancelButtonText}>Cancelar</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.reportButton} onPress={handleReport}>
-                <Text style={styles.reportButtonText}>Reportar</Text>
+              <TouchableOpacity style={styles.acceptButton} onPress={handleReport}>
+                <Text style={styles.acceptButtonText}>Enviar Reporte</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
-
-      <Modal
-        visible={editModalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setEditModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Editar Publicación</Text>
-            
-            <TextInput
-              style={styles.input}
-              value={editingPublication?.nombre}
-              onChangeText={(text) => setEditingPublication({...editingPublication, nombre: text})}
-              placeholder="Nombre"
-            />
-            <TextInput
-              style={styles.input}
-              value={editingPublication?.detalle}
-              onChangeText={(text) => setEditingPublication({...editingPublication, detalle: text})}
-              placeholder="Detalle"
-              multiline
-            />
-            <TextInput
-              style={styles.input}
-              value={editingPublication?.categoria}
-              onChangeText={(text) => setEditingPublication({...editingPublication, categoria: text})}
-              placeholder="Categoría"
-            />
-
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.cancelButton} onPress={() => setEditModalVisible(false)}>
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
-                <Text style={styles.editButtonText}>Guardar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal
-        visible={optionsModalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setOptionsModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <TouchableOpacity style={styles.optionButton} onPress={() => openEditModal(selectedPublication)}>
-              <Text style={styles.optionButtonText}>Editar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.optionButton} onPress={() => handleDelete(selectedPublication.id)}>
-              <Text style={styles.optionButtonText}>Eliminar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.cancelButton} onPress={() => setOptionsModalVisible(false)}>
-              <Text style={styles.cancelButtonText}>Cancelar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
       <Toast ref={(ref) => Toast.setRef(ref)} />
     </View>
   );
@@ -368,162 +273,148 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  item: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-  },
-  itemContent: {
-    flexDirection: 'column',
-  },
-  itemText: {
-    flex: 1,
-  },
-  image: {
-    width: screenWidth - 20,
-    height: screenWidth - 20,
-    resizeMode: 'cover',
-    marginBottom: 10,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  detail: {
-    fontSize: 14,
-    color: '#666',
-  },
-  category: {
-    fontSize: 14,
-    color: '#007BFF',
-  },
-  flatlistContent: {
-    paddingBottom: 50,
+    paddingHorizontal: 20,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  text: {
-    marginTop: 10,
-    fontSize: 16,
-  },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
   },
   errorText: {
     fontSize: 18,
     color: 'red',
+    textAlign: 'center',
   },
-  iconContainer: {
+  text: {
+    fontSize: 18,
+  },
+  item: {
+    backgroundColor: '#fff',
+    padding: 20,
+    marginVertical: 8,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  itemContent: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 10,
+    justifyContent: 'space-between',
   },
-  iconButton: {
-    padding: 5,
+  itemText: {
+    flex: 1,
+  },
+  userEmail: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 5,
+    color: '#555',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  detail: {
+    fontSize: 16,
+    marginTop: 5,
+  },
+  category: {
+    fontSize: 14,
+    marginTop: 5,
+    color: 'gray',
+  },
+  image: {
+    width: '100%',
+    height: 200,
+    borderRadius: 10,
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  flatlistContent: {
+    paddingBottom: 50, // Ajusta este valor según el tamaño de tu barra de navegación en InicioScreen
+  },
+  flagIcon: {
+    alignSelf: 'flex-end',
+    marginTop: 'auto',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContainer: {
-    width: '90%',
-    backgroundColor: '#fff',
+    width: '80%',
+    backgroundColor: 'white',
     borderRadius: 10,
     padding: 20,
     alignItems: 'center',
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 10,
   },
   reportContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
+    marginBottom: 10,
   },
   reportReasonBox: {
-    borderWidth: 1,
-    borderColor: '#ccc',
     padding: 10,
     margin: 5,
-    borderRadius: 5,
-    backgroundColor: 'white',
+    borderRadius: 10,
+    backgroundColor: '#f0f0f0',
   },
   reportReasonText: {
-    color: 'black',
+    fontSize: 16,
   },
   reportInput: {
-    width: '100%',
     borderColor: '#ccc',
     borderWidth: 1,
-    borderRadius: 5,
+    borderRadius: 10,
     padding: 10,
-    marginTop: 10,
-    marginBottom: 20,
-    textAlignVertical: 'top',
+    marginVertical: 10,
     height: 100,
+    width: '80%', // Ajusta el ancho según tus necesidades
+    textAlignVertical: 'top',
   },
   buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
+    width: '100%',
   },
   cancelButton: {
-    backgroundColor: '#ccc',
+    backgroundColor: 'red',
     padding: 10,
-    borderRadius: 5,
-    marginRight: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    width: '40%',
   },
   cancelButtonText: {
     color: 'white',
-  },
-  reportButton: {
-    backgroundColor: '#007BFF',
-    padding: 10,
-    borderRadius: 5,
-  },
-  reportButtonText: {
-    color: 'white',
-  },
-  editButton: {
-    backgroundColor: '#4CAF50',
-    padding: 10,
-    borderRadius: 5,
-  },
-  editButtonText: {
-    color: 'white',
-  },
-  input: {
-    width: '100%',
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
-  },
-  optionButton: {
-    backgroundColor: '#007BFF',
-    padding: 10,
-    borderRadius: 5,
-    marginBottom: 10,
-    width: '100%',
-  },
-  optionButtonText: {
-    color: 'white',
-    textAlign: 'center',
-  },
-  userName: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 5,
+  },
+  acceptButton: {
+    backgroundColor: '#007BFF',
+    padding: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    width: '40%',
+  },
+  acceptButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

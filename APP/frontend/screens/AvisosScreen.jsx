@@ -1,16 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, Image, ActivityIndicator, TextInput, Button } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, Image, ActivityIndicator, TextInput, Button, Alert } from 'react-native';
 import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import { FontAwesome5 } from '@expo/vector-icons';
-import FilterModal from './componentes/ModalFiltro';
 
 const PAGE_SIZE = 10;
 
 const AvisosScreen = () => {
   const [avisos, setAvisos] = useState([]);
-  const [filteredAvisos, setFilteredAvisos] = useState([]);
   const [lastVisible, setLastVisible] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -20,10 +17,7 @@ const AvisosScreen = () => {
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [reportDetails, setReportDetails] = useState("");
-  const [showReportError, setShowReportError] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showFilters, setShowFilters] = useState(false); // Estado para mostrar el modal de filtros
-  const [filter, setFilter] = useState({category: 'Todas las categorias', date: 'anytime' }); // Estado de los filtros
+  const [showReportError, setShowReportError] = useState(false); // Nuevo estado para mostrar el error
 
   const reportReasons = [
     "Contenido inapropiado",
@@ -36,21 +30,9 @@ const AvisosScreen = () => {
     "Otro"
   ];
 
-   // Define las categorías aquí
-   const categories = [
-    { label: 'Perdida de objeto', value: 'Perdida de objeto' },
-    { label: 'Juegos', value: 'juegos' },
-    { label: 'Búsqueda', value: 'busqueda' },
-    { label: 'queque', value: 'queque' }
-  ];
-
   useEffect(() => {
     fetchAvisos();
   }, []);
-
-  useEffect(() => {
-    filterAvisos();
-  }, [searchTerm, avisos]);
 
   const fetchAvisos = async () => {
     try {
@@ -65,7 +47,6 @@ const AvisosScreen = () => {
       }));
 
       setAvisos(avisosList);
-      setFilteredAvisos(avisosList);
       setLastVisible(avisosSnapshot.docs[avisosSnapshot.docs.length - 1]);
     } catch (error) {
       console.error("Error al obtener avisos:", error);
@@ -75,36 +56,9 @@ const AvisosScreen = () => {
     }
   };
 
-  const filterAvisos = () => {
-    if (searchTerm === '') {
-      setFilteredAvisos(avisos);
-    } else {
-      const termLower = searchTerm.toLowerCase();
-      const filtered = avisos.filter(aviso => {
-        const titulo = aviso.titulo?.toLowerCase() || '';
-        const contenido = aviso.contenido?.toLowerCase() || '';
-        return titulo.includes(termLower) || contenido.includes(termLower);
-      });
-      setFilteredAvisos(filtered);
-    }
-  };
-
-  const resetFilters = () => {
-    setFilter({category: 'Todas las categorias', date: 'anytime' });
-    setShowFilters(false);
-    };
-
-  const handleFilterSelect = (type, value) => {
-    setFilter({ ...filter, [type]: value });
-  };
-  const applyFilters = () => {
-    // Implementa tu lógica de filtros aquí
-    setShowFilters(false);
-  };
-
-
   const fetchMoreAvisos = async () => {
     if (!lastVisible || loadingMore) return;
+
     setLoadingMore(true);
     try {
       const db = getFirestore();
@@ -141,23 +95,44 @@ const AvisosScreen = () => {
     setSelectedAviso(item);
     setReportReason("");
     setReportDetails("");
-    setShowReportError(false);
+    setShowReportError(false); // Reiniciar el estado de error al abrir el modal
     setReportModalVisible(true);
   };
 
-  const handleReportSubmit = () => {
+  const handleReportSubmit = async () => {
     if (!reportReason) {
       setShowReportError(true);
       return;
     }
 
-    Toast.show({
-      type: 'success',
-      text1: 'Reporte enviado',
-      text2: 'Tu reporte ha sido enviado con éxito.'
-    });
+    try {
+      const db = getFirestore();
+      await addDoc(collection(db, 'reportes'), {
+        reason: reportReason,
+        additionalInfo: reportDetails,
+        timestamp: new Date(),
+        avisoId: selectedAviso.id,
+      });
 
-    setReportModalVisible(false);
+     setReportModalVisible(false); // Cerrar el modal primero
+
+      Toast.show({
+        type: 'success',
+        text1: 'Reporte enviado',
+        text2: 'Tu reporte ha sido enviado con éxito.',
+      });
+
+      setReportReason('');
+      setReportDetails('');
+    } catch (error) {
+      setReportModalVisible(false);
+      console.error('Error enviando el reporte:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Hubo un problema al enviar el reporte.',
+      });
+    }
   };
 
   const renderItem = ({ item }) => (
@@ -174,7 +149,7 @@ const AvisosScreen = () => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#143d5c" />
         <Text style={styles.text}>Cargando avisos...</Text>
       </View>
     );
@@ -190,42 +165,15 @@ const AvisosScreen = () => {
 
   return (
     <View style={styles.container}>
-     <View style={styles.searchContainer}>
-       <FontAwesome5 name="search" size={18} color="black" />
-      <TextInput
-        style={styles.searchInput}
-        placeholder=" Buscar..."
-        value={searchTerm}
-        onChangeText={setSearchTerm}
+      <FlatList
+        data={avisos}
+        renderItem={renderItem}
+        keyExtractor={item => item.id}
+        onEndReached={fetchMoreAvisos}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#143d5c" />}
+        contentContainerStyle={styles.flatlistContent}
       />
-       <TouchableOpacity style={styles.filterButton} onPress={() => setShowFilters(true)}>
-            <FontAwesome5 name="filter" size={18} color="black" />
-          </TouchableOpacity>
-      </View>
-      
-      <FilterModal
-        visible={showFilters}
-        onClose={() => setShowFilters(false)}
-        filter={filter}
-        handleFilterSelect={handleFilterSelect}
-        resetFilters={resetFilters}
-        applyFilters={applyFilters}
-        categories={categories} // Pasa las categorías como prop
-      />
-
-      {filteredAvisos.length > 0 ? (
-        <FlatList
-          data={filteredAvisos}
-          renderItem={renderItem}
-          keyExtractor={item => item.id}
-          onEndReached={fetchMoreAvisos}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#0000ff" />}
-          contentContainerStyle={styles.flatlistContent}
-        />
-      ) : (
-        <Text style={styles.noResultsText}>No se encontraron resultados</Text>
-      )}
       {selectedAviso && (
         <Modal
           animationType="slide"
@@ -247,7 +195,6 @@ const AvisosScreen = () => {
           </View>
         </Modal>
       )}
-
       <Modal
         animationType="slide"
         transparent={true}
@@ -257,7 +204,6 @@ const AvisosScreen = () => {
         <View style={styles.reportModalContainer}>
           <View style={styles.reportModalContent}>
             <Text style={styles.reportTitle}>Reportar Aviso</Text>
-
             <View style={styles.reasonsContainer}>
               {reportReasons.map((reason, index) => (
                 <TouchableOpacity
@@ -277,7 +223,6 @@ const AvisosScreen = () => {
                 </TouchableOpacity>
               ))}
             </View>
-
             <TextInput
               style={styles.reportInput}
               placeholder="Detalles adicionales (opcional)"
@@ -290,12 +235,12 @@ const AvisosScreen = () => {
             )}
             <View style={styles.reportButtonContainer}>
               <Button title="Cancelar" color="red" onPress={() => setReportModalVisible(false)} />
-              <Button title="Enviar" onPress={handleReportSubmit} />
+              <Button title="Enviar" color='143d5c' onPress={handleReportSubmit} />
             </View>
           </View>
         </View>
       </Modal>
-      <Toast ref={(ref) => Toast.setRef(ref)} />
+      <Toast ref={(ref) => Toast.setRef(ref)} style={{ position: 'absolute', zIndex: 1000 }} />
     </View>
   );
 };
@@ -304,29 +249,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#eee',
-    borderRadius: 5,
-    margin: 10,
-    padding: 10,
-    alignItems: 'center',
-    position: 'sticky',
-    top: 0,
-    zIndex: 10,
-    bottom: 30,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 10,
-  },
-  filterButton: {
-    marginLeft: 10,
-  },
-  contentContainer: {
-    flexGrow: 1,
-    marginBottom: 10,
   },
   loadingContainer: {
     flex: 1,
@@ -454,11 +376,6 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 18,
-  },
-  noResultsText: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginTop: 20,
   },
 });
 
