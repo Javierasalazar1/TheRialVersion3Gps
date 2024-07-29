@@ -37,7 +37,7 @@ const InicioScreen = ({ navigation }) => {
 
   useEffect(() => {
     fetchPosts();
-  }, [filter]);
+  }, [filter,search, selectedScreen]);
 
   useEffect(() => {
     // Cambiar el título del header según la pantalla seleccionada

@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, Image, ActivityIndicator, TextInput, Button, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, Image, ActivityIndicator, TextInput, Button } from 'react-native';
 import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
+import { FontAwesome5 } from '@expo/vector-icons';
+import FilterModal from './componentes/ModalFiltro';
 
 const PAGE_SIZE = 10;
 
 const AvisosScreen = () => {
   const [avisos, setAvisos] = useState([]);
+  const [filteredAvisos, setFilteredAvisos] = useState([]);
   const [lastVisible, setLastVisible] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -17,7 +20,10 @@ const AvisosScreen = () => {
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [reportDetails, setReportDetails] = useState("");
-  const [showReportError, setShowReportError] = useState(false); // Nuevo estado para mostrar el error
+  const [showReportError, setShowReportError] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false); // Estado para mostrar el modal de filtros
+  const [filter, setFilter] = useState({ order: 'mostLikes', category: 'deportes', date: 'anytime' }); // Estado de los filtros
 
   const reportReasons = [
     "Contenido inapropiado",
@@ -34,6 +40,10 @@ const AvisosScreen = () => {
     fetchAvisos();
   }, []);
 
+  useEffect(() => {
+    filterAvisos();
+  }, [searchTerm, avisos]);
+
   const fetchAvisos = async () => {
     try {
       const db = getFirestore();
@@ -47,6 +57,7 @@ const AvisosScreen = () => {
       }));
 
       setAvisos(avisosList);
+      setFilteredAvisos(avisosList);
       setLastVisible(avisosSnapshot.docs[avisosSnapshot.docs.length - 1]);
     } catch (error) {
       console.error("Error al obtener avisos:", error);
@@ -56,9 +67,35 @@ const AvisosScreen = () => {
     }
   };
 
+  const filterAvisos = () => {
+    if (searchTerm === '') {
+      setFilteredAvisos(avisos);
+    } else {
+      const termLower = searchTerm.toLowerCase();
+      const filtered = avisos.filter(aviso => {
+        const titulo = aviso.titulo?.toLowerCase() || '';
+        const contenido = aviso.contenido?.toLowerCase() || '';
+        return titulo.includes(termLower) || contenido.includes(termLower);
+      });
+      setFilteredAvisos(filtered);
+    }
+  };
+
+  const resetFilters = () => {
+    setFilter({ order: 'mostLikes', category: 'deportes', date: 'anytime' });
+  };
+
+  const handleFilterSelect = (type, value) => {
+    setFilter({ ...filter, [type]: value });
+  };
+  const applyFilters = () => {
+    // Implementa tu lógica de filtros aquí
+    setShowFilters(false);
+  };
+
+
   const fetchMoreAvisos = async () => {
     if (!lastVisible || loadingMore) return;
-
     setLoadingMore(true);
     try {
       const db = getFirestore();
@@ -95,17 +132,16 @@ const AvisosScreen = () => {
     setSelectedAviso(item);
     setReportReason("");
     setReportDetails("");
-    setShowReportError(false); // Reiniciar el estado de error al abrir el modal
+    setShowReportError(false);
     setReportModalVisible(true);
   };
 
   const handleReportSubmit = () => {
     if (!reportReason) {
-      setShowReportError(true); // Mostrar mensaje de error si no se ha seleccionado un motivo
+      setShowReportError(true);
       return;
     }
 
-    // Envío del reporte simulado con un Toast para el feedback
     Toast.show({
       type: 'success',
       text1: 'Reporte enviado',
@@ -145,15 +181,41 @@ const AvisosScreen = () => {
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={avisos}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
-        onEndReached={fetchMoreAvisos}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#0000ff" />}
-        contentContainerStyle={styles.flatlistContent}
+     <View style={styles.searchContainer}>
+       <FontAwesome5 name="search" size={18} color="black" />
+      <TextInput
+        style={styles.searchInput}
+        placeholder=" Buscar..."
+        value={searchTerm}
+        onChangeText={setSearchTerm}
       />
+       <TouchableOpacity style={styles.filterButton} onPress={() => setShowFilters(true)}>
+            <FontAwesome5 name="filter" size={18} color="black" />
+          </TouchableOpacity>
+      </View>
+      
+      <FilterModal
+        visible={showFilters}
+        onClose={() => setShowFilters(false)}
+        filter={filter}
+        handleFilterSelect={handleFilterSelect}
+        resetFilters={resetFilters}
+        applyFilters={applyFilters}
+      />
+
+      {filteredAvisos.length > 0 ? (
+        <FlatList
+          data={filteredAvisos}
+          renderItem={renderItem}
+          keyExtractor={item => item.id}
+          onEndReached={fetchMoreAvisos}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#0000ff" />}
+          contentContainerStyle={styles.flatlistContent}
+        />
+      ) : (
+        <Text style={styles.noResultsText}>No se encontraron resultados</Text>
+      )}
       {selectedAviso && (
         <Modal
           animationType="slide"
@@ -199,9 +261,9 @@ const AvisosScreen = () => {
                   <Text style={[
                     styles.reportOptionText,
                     reportReason === reason ? styles.selectedReportOptionText : null
-                    ]}>
-                      {reason}
-                    </Text>
+                  ]}>
+                    {reason}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -232,6 +294,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#eee',
+    borderRadius: 5,
+    margin: 10,
+    padding: 10,
+    alignItems: 'center',
+    position: 'sticky',
+    top: 0,
+    zIndex: 10,
+    bottom: 30,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  filterButton: {
+    marginLeft: 10,
+  },
+  contentContainer: {
+    flexGrow: 1,
+    marginBottom: 10,
   },
   loadingContainer: {
     flex: 1,
@@ -359,6 +444,11 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 18,
+  },
+  noResultsText: {
+    fontSize: 18,
+    textAlign: 'center',
+    marginTop: 20,
   },
 });
 
