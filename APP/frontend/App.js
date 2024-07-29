@@ -102,7 +102,7 @@ const App = () => {
       <AuthProvider>
         <NavigationContainer>
           <Stack.Navigator>
-            <Stack.Screen name="Inicio de sesión" component={LoginScreen} />
+            <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Inicio" component={InicioScreen} />
             <Stack.Screen name="Crear Publicacion" component={CrearPublicacionScreen} />
             <Stack.Screen name="Crear Aviso" component={CrearAvisoScreen} />
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     borderRadius: 4,
     alignItems: 'center',
-    width: '40%',
+    width: '100%',
   },
   buttonText: {
     color: 'white',

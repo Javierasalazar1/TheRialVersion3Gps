@@ -53,11 +53,11 @@ const InicioScreen = ({ navigation }) => {
   const fetchPosts = async () => {
     const querySnapshot = await getDocs(collection(firestore, 'posts'));
     let postsData = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-    
+
     if (filter) {
       postsData = applyFilter(postsData, filter);
     }
-    
+
     setPosts(postsData);
   };
 
@@ -169,7 +169,6 @@ const InicioScreen = ({ navigation }) => {
             </Menu>
           </View>
         </View>
-
         {/* Search Bar */}
         <View style={styles.searchContainer}>
           <FontAwesome5 name="search" size={18} color="black" />
@@ -183,17 +182,14 @@ const InicioScreen = ({ navigation }) => {
             <FontAwesome5 name="filter" size={18} color="black" />
           </TouchableOpacity>
         </View>
-
         {/* Content */}
         <ScrollView contentContainerStyle={styles.contentContainer} stickyHeaderIndices={[0, 1]}>
           {renderContent()}
         </ScrollView>
-
         {/* Add Button */}
         <TouchableOpacity style={styles.fab} onPress={toggleMenu}>
           <FontAwesome5 name="plus" size={24} color="white" />
         </TouchableOpacity>
-
         {/* Animated Menu */}
         <Animated.View style={[styles.menuContainer, { height: menuHeight }]}>
           <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('CrearAviso')}>
@@ -206,7 +202,6 @@ const InicioScreen = ({ navigation }) => {
             <Text style={styles.menuText}>Market</Text>
           </TouchableOpacity>
         </Animated.View>
-
         {/* Filters Modal */}
         {showFilters && (
           <Modal
@@ -225,7 +220,6 @@ const InicioScreen = ({ navigation }) => {
                   <Picker.Item label="Más Likes" value="mostLikes" />
                   <Picker.Item label="Menos Likes" value="leastLikes" />
                 </Picker>
-
                 <Text style={styles.filterTitle}>Categorías</Text>
                 <Picker
                   selectedValue={filter.category}
@@ -235,7 +229,6 @@ const InicioScreen = ({ navigation }) => {
                   <Picker.Item label="Juegos" value="juegos" />
                   <Picker.Item label="Búsqueda" value="busqueda" />
                 </Picker>
-
                 <Text style={styles.filterTitle}>Fecha de publicación</Text>
                 <Picker
                   style={styles.filterPicker}
@@ -248,7 +241,6 @@ const InicioScreen = ({ navigation }) => {
                   <Picker.Item label="Este mes" value="thisMonth" />
                   <Picker.Item label="Este año" value="thisYear" />
                 </Picker>
-
                 <View style={styles.filterButtons}>
                   <TouchableOpacity style={styles.filterButtonCancel} onPress={resetFilters}>
                     <Text style={styles.filterButtonText}>Cancelar</Text>
@@ -261,7 +253,6 @@ const InicioScreen = ({ navigation }) => {
             </View>
           </Modal>
         )}
-
         {/* Footer */}
         <View style={styles.footer}>
           <TouchableOpacity onPress={() => setSelectedScreen('Avisos')}>

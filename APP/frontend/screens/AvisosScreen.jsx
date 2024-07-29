@@ -99,20 +99,40 @@ const AvisosScreen = () => {
     setReportModalVisible(true);
   };
 
-  const handleReportSubmit = () => {
+  const handleReportSubmit = async () => {
     if (!reportReason) {
-      setShowReportError(true); // Mostrar mensaje de error si no se ha seleccionado un motivo
+      setShowReportError(true);
       return;
     }
 
-    // Envío del reporte simulado con un Toast para el feedback
-    Toast.show({
-      type: 'success',
-      text1: 'Reporte enviado',
-      text2: 'Tu reporte ha sido enviado con éxito.'
-    });
+    try {
+      const db = getFirestore();
+      await addDoc(collection(db, 'reportes'), {
+        reason: reportReason,
+        additionalInfo: reportDetails,
+        timestamp: new Date(),
+        avisoId: selectedAviso.id,
+      });
 
-    setReportModalVisible(false);
+     setReportModalVisible(false); // Cerrar el modal primero
+
+      Toast.show({
+        type: 'success',
+        text1: 'Reporte enviado',
+        text2: 'Tu reporte ha sido enviado con éxito.',
+      });
+
+      setReportReason('');
+      setReportDetails('');
+    } catch (error) {
+      setReportModalVisible(false);
+      console.error('Error enviando el reporte:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Hubo un problema al enviar el reporte.',
+      });
+    }
   };
 
   const renderItem = ({ item }) => (
@@ -197,9 +217,9 @@ const AvisosScreen = () => {
                   <Text style={[
                     styles.reportOptionText,
                     reportReason === reason ? styles.selectedReportOptionText : null
-                    ]}>
-                      {reason}
-                    </Text>
+                  ]}>
+                    {reason}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -220,7 +240,7 @@ const AvisosScreen = () => {
           </View>
         </View>
       </Modal>
-      <Toast ref={(ref) => Toast.setRef(ref)} />
+      <Toast ref={(ref) => Toast.setRef(ref)} style={{ position: 'absolute', zIndex: 1000 }} />
     </View>
   );
 };
