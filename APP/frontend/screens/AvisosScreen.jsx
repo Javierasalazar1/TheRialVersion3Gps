@@ -1,13 +1,17 @@
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, ActivityIndicator, TextInput, Button, Image, Alert } from 'react-native';
 import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
+import { FontAwesome5 } from '@expo/vector-icons';
+import FilterModal from './componentes/ModalFiltro';
 
 const PAGE_SIZE = 10;
 
 const AvisosScreen = () => {
   const [avisos, setAvisos] = useState([]);
+  const [filteredAvisos, setFilteredAvisos] = useState([]);
   const [lastVisible, setLastVisible] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -18,11 +22,11 @@ const AvisosScreen = () => {
   const [reportReason, setReportReason] = useState("");
   const [reportDetails, setReportDetails] = useState("");
   const [showReportError, setShowReportError] = useState(false);
+
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
   const [dropdownMenuVisible, setDropdownMenuVisible] = useState(false);
-
   const reportReasons = [
     "Contenido inapropiado",
     "Spam",
@@ -34,9 +38,21 @@ const AvisosScreen = () => {
     "Otro"
   ];
 
+   // Define las categorías aquí
+   const categories = [
+    { label: 'Perdida de objeto', value: 'Perdida de objeto' },
+    { label: 'Juegos', value: 'juegos' },
+    { label: 'Búsqueda', value: 'busqueda' },
+    { label: 'queque', value: 'queque' }
+  ];
+
   useEffect(() => {
     fetchAvisos();
   }, []);
+
+  useEffect(() => {
+    filterAvisos();
+  }, [searchTerm, avisos]);
 
   const fetchAvisos = async () => {
     try {
@@ -51,6 +67,7 @@ const AvisosScreen = () => {
       }));
 
       setAvisos(avisosList);
+      setFilteredAvisos(avisosList);
       setLastVisible(avisosSnapshot.docs[avisosSnapshot.docs.length - 1]);
     } catch (error) {
       console.error("Error al obtener avisos:", error);
@@ -60,9 +77,36 @@ const AvisosScreen = () => {
     }
   };
 
+  const filterAvisos = () => {
+    if (searchTerm === '') {
+      setFilteredAvisos(avisos);
+    } else {
+      const termLower = searchTerm.toLowerCase();
+      const filtered = avisos.filter(aviso => {
+        const titulo = aviso.titulo?.toLowerCase() || '';
+        const contenido = aviso.contenido?.toLowerCase() || '';
+        return titulo.includes(termLower) || contenido.includes(termLower);
+      });
+      setFilteredAvisos(filtered);
+    }
+  };
+
+  const resetFilters = () => {
+    setFilter({category: 'Todas las categorias', date: 'anytime' });
+    setShowFilters(false);
+    };
+
+  const handleFilterSelect = (type, value) => {
+    setFilter({ ...filter, [type]: value });
+  };
+  const applyFilters = () => {
+    // Implementa tu lógica de filtros aquí
+    setShowFilters(false);
+  };
+
+
   const fetchMoreAvisos = async () => {
     if (!lastVisible || loadingMore) return;
-
     setLoadingMore(true);
     try {
       const db = getFirestore();
@@ -217,15 +261,42 @@ const AvisosScreen = () => {
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={avisos}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
-        onEndReached={fetchMoreAvisos}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#0000ff" />}
-        contentContainerStyle={styles.flatlistContent}
+     <View style={styles.searchContainer}>
+       <FontAwesome5 name="search" size={18} color="black" />
+      <TextInput
+        style={styles.searchInput}
+        placeholder=" Buscar..."
+        value={searchTerm}
+        onChangeText={setSearchTerm}
       />
+       <TouchableOpacity style={styles.filterButton} onPress={() => setShowFilters(true)}>
+            <FontAwesome5 name="filter" size={18} color="black" />
+          </TouchableOpacity>
+      </View>
+      
+      <FilterModal
+        visible={showFilters}
+        onClose={() => setShowFilters(false)}
+        filter={filter}
+        handleFilterSelect={handleFilterSelect}
+        resetFilters={resetFilters}
+        applyFilters={applyFilters}
+        categories={categories} // Pasa las categorías como prop
+      />
+
+      {filteredAvisos.length > 0 ? (
+        <FlatList
+          data={filteredAvisos}
+          renderItem={renderItem}
+          keyExtractor={item => item.id}
+          onEndReached={fetchMoreAvisos}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#0000ff" />}
+          contentContainerStyle={styles.flatlistContent}
+        />
+      ) : (
+        <Text style={styles.noResultsText}>No se encontraron resultados</Text>
+      )}
       {selectedAviso && (
         <Modal
           animationType="slide"
@@ -290,6 +361,7 @@ const AvisosScreen = () => {
             {showReportError && !reportReason && (
               <Text style={styles.errorText}>Por favor, selecciona una razón para el reporte.</Text>
             )}
+
             <TextInput
               style={styles.input}
               value={reportDetails}
@@ -309,6 +381,7 @@ const AvisosScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+
     backgroundColor: '#fff',
   },
   itemContainer: {
@@ -404,6 +477,11 @@ const styles = StyleSheet.create({
     height: 200,
     resizeMode: 'contain',
     marginBottom: 10,
+  },
+  noResultsText: {
+    fontSize: 18,
+    textAlign: 'center',
+    marginTop: 20,
   },
 });
 
