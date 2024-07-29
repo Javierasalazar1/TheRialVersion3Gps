@@ -4,6 +4,8 @@ import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs, g
 import Toast from 'react-native-toast-message';
 import { Ionicons } from '@expo/vector-icons';
 
+
+
 const PAGE_SIZE = 10;
 
 const PublicacionesScreen = () => {
@@ -31,32 +33,15 @@ const PublicacionesScreen = () => {
 
       const publicacionesList = await Promise.all(publicacionesSnapshot.docs.map(async (docSnapshot) => {
         const data = docSnapshot.data();
-        if (!data.userId) {
-          console.warn(`La publicación ${docSnapshot.id} no tiene userId`);
-          return {
-            id: docSnapshot.id,
-            ...data,
-            userEmail: 'Usuario desconocido'
-          };
-        }
-        try {
-          const userDocRef = doc(db, 'users', data.userId);
-          const userDocSnapshot = await getDoc(userDocRef);
-          const userData = userDocSnapshot.data();
-          return {
-            id: docSnapshot.id,
-            ...data,
-            userEmail: userData ? userData.email : 'Usuario desconocido'
-          };
-        } catch (userError) {
-          console.error(`Error al obtener datos del usuario para la publicación ${docSnapshot.id}:`, userError);
-          return {
-            id: docSnapshot.id,
-            ...data,
-            userEmail: 'Error al obtener usuario'
-          };
-        }
-      }));
+
+        // Asegúrate de que el campo username exista en el documento de publicación
+        return {
+          id: docSnapshot.id,
+          ...data,
+          userName: data.username || 'Usuario desconocido', // Usa el campo username del documento
+        };
+      });
+  
 
       setPublicaciones(publicacionesList);
       setLastVisible(publicacionesSnapshot.docs[publicacionesSnapshot.docs.length - 1]);
@@ -174,11 +159,14 @@ const PublicacionesScreen = () => {
     <View style={styles.item}>
       <View style={styles.itemContent}>
         <View style={styles.itemText}>
-          <Text style={styles.userEmail}>{item.userEmail}</Text>
-          {item.imagen ? <Image source={{ uri: item.imagen }} style={styles.image} onError={(e) => console.log('Error al cargar la imagen:', e.nativeEvent.error)} /> : null}
+
+          <Text style={styles.userName}> {item.userName}</Text>
+          {item.imagen && <Image source={{ uri: item.imagen }} style={styles.image} onError={(e) => console.log('Error al cargar la imagen:', e.nativeEvent.error)} />}
+
           <Text style={styles.title}>{item.nombre}</Text>
           <Text style={styles.detail}>{item.detalle}</Text>
           <Text style={styles.category}>{item.categoria}</Text>
+          <Text style={styles.date}>{item.fecha}</Text> {/* Muestra la fecha formateada */}
         </View>
         <TouchableOpacity onPress={() => openReportModal(item.id)} style={styles.flagIcon}>
           <Ionicons name="flag-outline" size={24} color="red" />
