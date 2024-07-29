@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { StyleSheet, Text, TextInput, View, TouchableOpacity, Image, ScrollView, Animated, Modal } from 'react-native';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { Menu, MenuOptions, MenuOption, MenuTrigger, MenuProvider } from 'react-native-popup-menu';
@@ -33,11 +32,11 @@ const InicioScreen = ({ navigation }) => {
   const [filter, setFilter] = useState({});
   const { logout } = useContext(AuthContext);
   const menuAnimation = useRef(new Animated.Value(0)).current;
-  const [showFilters, setShowFilters] = useState(false);
+ 
 
   useEffect(() => {
     fetchPosts();
-  }, [filter]);
+  }, [filter,search, selectedScreen]);
 
   useEffect(() => {
     // Cambiar el título del header según la pantalla seleccionada
@@ -61,11 +60,6 @@ const InicioScreen = ({ navigation }) => {
     setPosts(postsData);
   };
 
-  const applyFilter = (posts, filter) => {
-    // Implementar lógica de filtrado aquí según el filtro seleccionado
-    // Por ejemplo, filtrar por categoría, fecha, tipo, etc.
-    return posts;
-  };
 
   const handleDeletePost = async (postId) => {
     await deleteDoc(doc(firestore, 'posts', postId));
@@ -92,20 +86,6 @@ const InicioScreen = ({ navigation }) => {
   const handleLogout = () => {
     logout();
     navigation.navigate('Login');
-  };
-
-  const handleFilterSelect = (type, value) => {
-    setFilter(prevFilter => ({ ...prevFilter, [type]: value }));
-  };
-
-  const resetFilters = () => {
-    setFilter({});
-    setShowFilters(false);
-  };
-
-  const applyFilters = () => {
-    fetchPosts();
-    setShowFilters(false);
   };
 
 
@@ -170,20 +150,6 @@ const InicioScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <FontAwesome5 name="search" size={18} color="black" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Buscar"
-            value={search}
-            onChangeText={setSearch}
-          />
-          <TouchableOpacity style={styles.filterButton} onPress={() => setShowFilters(true)}>
-            <FontAwesome5 name="filter" size={18} color="black" />
-          </TouchableOpacity>
-        </View>
-
         {/* Content */}
         <ScrollView contentContainerStyle={styles.contentContainer} stickyHeaderIndices={[0, 1]}>
           {renderContent()}
@@ -207,61 +173,7 @@ const InicioScreen = ({ navigation }) => {
           </TouchableOpacity>
         </Animated.View>
 
-        {/* Filters Modal */}
-        {showFilters && (
-          <Modal
-            transparent={true}
-            animationType="slide"
-            visible={showFilters}
-            onRequestClose={() => setShowFilters(false)}
-          >
-            <View style={styles.filterModal}>
-              <View style={styles.filterContainer}>
-                <Text style={styles.filterTitle}>Ordenar por</Text>
-                <Picker
-                  selectedValue={filter.order}
-                  onValueChange={(itemValue) => handleFilterSelect('order', itemValue)}
-                >
-                  <Picker.Item label="Más Likes" value="mostLikes" />
-                  <Picker.Item label="Menos Likes" value="leastLikes" />
-                </Picker>
-
-                <Text style={styles.filterTitle}>Categorías</Text>
-                <Picker
-                  selectedValue={filter.category}
-                  onValueChange={(itemValue) => handleFilterSelect('category', itemValue)}
-                >
-                  <Picker.Item label="Deportes" value="deportes" />
-                  <Picker.Item label="Juegos" value="juegos" />
-                  <Picker.Item label="Búsqueda" value="busqueda" />
-                </Picker>
-
-                <Text style={styles.filterTitle}>Fecha de publicación</Text>
-                <Picker
-                  style={styles.filterPicker}
-                  selectedValue={filter.date}
-                  onValueChange={(itemValue) => handleFilterSelect('date', itemValue)}
-                >
-                  <Picker.Item label="En cualquier momento" value="anytime" />
-                  <Picker.Item label="Hoy" value="today" />
-                  <Picker.Item label="Esta semana" value="thisWeek" />
-                  <Picker.Item label="Este mes" value="thisMonth" />
-                  <Picker.Item label="Este año" value="thisYear" />
-                </Picker>
-
-                <View style={styles.filterButtons}>
-                  <TouchableOpacity style={styles.filterButtonCancel} onPress={resetFilters}>
-                    <Text style={styles.filterButtonText}>Cancelar</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.filterButtonApply} onPress={applyFilters}>
-                    <Text style={styles.filterButtonText}>Aplicar</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          </Modal>
-        )}
-
+    
         {/* Footer */}
         <View style={styles.footer}>
           <TouchableOpacity onPress={() => setSelectedScreen('Avisos')}>
@@ -411,29 +323,6 @@ const styles = StyleSheet.create({
 
   menuOptionText: {
     fontSize: 16,
-  },
-
-  filterButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 20,
-  },
-  filterButtonCancel: {
-    backgroundColor: 'red',
-    padding: 10,
-    borderRadius: 5,
-  },
-  filterButtonApply: {
-    backgroundColor: 'green',
-    padding: 10,
-    borderRadius: 5,
-  },
-  filterButtonText: {
-    color: 'white',
-    fontSize: 16,
-  },
-  filterPicker:{
-    fontSize: 10,
   },
   menuContainer: {
     position: 'fixed',
