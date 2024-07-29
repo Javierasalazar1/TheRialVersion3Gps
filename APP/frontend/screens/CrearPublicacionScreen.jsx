@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image, TextInput, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Image, TextInput, ScrollView, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { uploadFileToStorage } from '../firebasestorage';
 import { getAuth } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 console.log('uploadFileToStorage:', uploadFileToStorage);
 
@@ -15,12 +16,16 @@ const CrearPublicacionScreen = () => {
   const [categoria, setCategoria] = useState('');
   const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [username, setUsername] = useState('');
 
   useEffect(() => {
     const auth = getAuth();
     setCurrentUser(auth.currentUser);
 
     (async () => {
+      const storedUsername = await AsyncStorage.getItem('username');
+      setUsername(storedUsername || '');
+
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
         alert('Se necesita permiso para acceder a la galería de imágenes.');
@@ -72,13 +77,14 @@ const CrearPublicacionScreen = () => {
       }
   
       const docRef = await addDoc(collection(db, 'publicaciones'), {
-        nombre,
+        nombre,            // Almacena el valor del campo de texto 'nombre'
         detalle,
         categoria,
         fecha: new Date().toISOString(),
         like: 0,
         imagen: imageUrl,
         userId: currentUser.uid,
+        username,         // Almacena el username desde AsyncStorage
       });
   
       console.log('Documento agregado con ID: ', docRef.id);
