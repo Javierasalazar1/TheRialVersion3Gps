@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   itemContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 10,
+    padding: 34,
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
   },
