@@ -3,9 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, ActivityIndicator, TextInput, Button, Image, Alert } from 'react-native';
 import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
-
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
+import { FontAwesome5 } from '@expo/vector-icons';
+import FilterModal from './componentes/ModalFiltro';
 
 const PAGE_SIZE = 10;
 
@@ -26,6 +27,15 @@ const AvisosScreen = () => {
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
   const [dropdownMenuVisible, setDropdownMenuVisible] = useState(false);
+  //mis filtros
+  const [filteredAvisos, setFilteredAvisos] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false); // Estado para mostrar el modal de filtros
+  const [filter, setFilter] = useState({category: 'Todas las categorias', date: 'anytime' }); // Estado de los filtros
+
+
+
+
   const reportReasons = [
     "Contenido inapropiado",
     "Spam",
@@ -37,9 +47,24 @@ const AvisosScreen = () => {
     "Otro"
   ];
 
+   // Define las categorías aquí
+   const categories = [
+    { label: 'Perdida de objeto', value: 'Perdida de objeto' },
+    { label: 'Juegos', value: 'juegos' },
+    { label: 'Búsqueda', value: 'busqueda' },
+    { label: 'queque', value: 'queque' }
+  ];
+
+
   useEffect(() => {
     fetchAvisos();
   }, []);
+
+  useEffect(() => {
+    filterAvisos();
+  }, [searchTerm, avisos]);
+
+
 
   const fetchAvisos = async () => {
     try {
@@ -54,6 +79,7 @@ const AvisosScreen = () => {
       }));
 
       setAvisos(avisosList);
+      setFilteredAvisos(avisosList);
       setLastVisible(avisosSnapshot.docs[avisosSnapshot.docs.length - 1]);
     } catch (error) {
       console.error("Error al obtener avisos:", error);
@@ -62,6 +88,36 @@ const AvisosScreen = () => {
       setLoading(false);
     }
   };
+//Mis filtros
+  const filterAvisos = () => {
+    if (searchTerm === '') {
+      setFilteredAvisos(avisos);
+    } else {
+      const termLower = searchTerm.toLowerCase();
+      const filtered = avisos.filter(aviso => {
+        const titulo = aviso.titulo?.toLowerCase() || '';
+        const contenido = aviso.contenido?.toLowerCase() || '';
+        return titulo.includes(termLower) || contenido.includes(termLower);
+      });
+      setFilteredAvisos(filtered);
+    }
+  };
+
+  const resetFilters = () => {
+    setFilter({category: 'Todas las categorias', date: 'anytime' });
+    setShowFilters(false);
+    };
+
+  const handleFilterSelect = (type, value) => {
+    setFilter({ ...filter, [type]: value });
+  };
+  const applyFilters = () => {
+    // Implementa tu lógica de filtros aquí
+    setShowFilters(false);
+  };
+
+//hasta aqui
+
 
   const fetchMoreAvisos = async () => {
     if (!lastVisible || loadingMore) return;
@@ -241,8 +297,31 @@ const AvisosScreen = () => {
 
   return (
     <View style={styles.container}>
+        <View style={styles.searchContainer}>
+       <FontAwesome5 name="search" size={18} color="black" />
+      <TextInput
+        style={styles.searchInput}
+        placeholder=" Buscar..."
+        value={searchTerm}
+        onChangeText={setSearchTerm}
+      />
+       <TouchableOpacity style={styles.filterButton} onPress={() => setShowFilters(true)}>
+            <FontAwesome5 name="filter" size={18} color="black" />
+          </TouchableOpacity>
+      </View>
+      
+      <FilterModal
+        visible={showFilters}
+        onClose={() => setShowFilters(false)}
+        filter={filter}
+        handleFilterSelect={handleFilterSelect}
+        resetFilters={resetFilters}
+        applyFilters={applyFilters}
+        categories={categories} // Pasa las categorías como prop
+      />
+
       <FlatList
-        data={avisos}
+        data={filteredAvisos}
         renderItem={renderItem}
         keyExtractor={item => item.id}
         onEndReached={fetchMoreAvisos}
@@ -343,6 +422,26 @@ const styles = StyleSheet.create({
 
     backgroundColor: '#fff',
   },
+  searchContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#eee',
+    borderRadius: 5,
+    margin: 10,
+    padding: 10,
+    alignItems: 'center',
+    position: 'sticky',
+    top: 0,
+    zIndex: 10,
+    bottom: 30,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  filterButton: {
+    marginLeft: 10,
+  },
+
 
   itemContainer: {
     flexDirection: 'row',
