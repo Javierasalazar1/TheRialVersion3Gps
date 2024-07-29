@@ -146,21 +146,36 @@ const MercadoScreen = () => {
     setReportDetails('');
   };
 
-  const handleReportSubmit = () => {
+  const handleReportSubmit = async () => {
     if (!reportReason) {
-      setShowReportError(true); // Mostrar mensaje de error si no se ha seleccionado un motivo
+      setShowReportError(true);
       return;
     }
 
-    // Envío del reporte simulado con un Toast para el feedback
-    Toast.show({
-      type: 'success',
-      text1: 'Reporte enviado',
-      text2: 'Tu reporte ha sido enviado con éxito.'
-    });
+    try {
+      const db = getFirestore();
+      await addDoc(collection(db, 'reports'), {
+        reason: reportReason,
+        additionalInfo: reportDetails,
+        timestamp: new Date(),
+        publicationId: selectedItemId,  // Aquí usas el ID de la publicación seleccionada
+      });
 
-    // Cerrar el modal y limpiar los estados
-    handleCloseModal();
+      Toast.show({
+        type: 'success',
+        text1: 'Reporte enviado',
+        text2: 'Tu reporte ha sido enviado con éxito.',
+      });
+
+      handleCloseModal();
+    } catch (error) {
+      console.error('Error enviando el reporte:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Hubo un problema al enviar el reporte.',
+      });
+    }
   };
 
   const formatFecha = (fecha) => {
@@ -207,12 +222,11 @@ const MercadoScreen = () => {
           keyExtractor={item => item.id}
           onEndReached={fetchMorePublicaciones}
           onEndReachedThreshold={0.5}
-          ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#0000ff" />}
+          ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#143d5c" />}
           contentContainerStyle={{ flexGrow: 1 }}
           style={{ flex: 1 }}
         />
       </View>
-
       {/* Modal de reporte */}
       <Modal
         visible={modalVisible}

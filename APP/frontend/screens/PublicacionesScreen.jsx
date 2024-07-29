@@ -190,7 +190,7 @@ const PublicacionesScreen = () => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#143d5c" />
         <Text style={styles.text}>Cargando publicaciones...</Text>
       </View>
     );
@@ -212,10 +212,9 @@ const PublicacionesScreen = () => {
         keyExtractor={item => item.id}
         onEndReached={fetchMorePublicaciones}
         onEndReachedThreshold={0.5}
-        ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#0000ff" />}
+        ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#143d5c" />}
         contentContainerStyle={styles.flatlistContent}
       />
-
       <Modal
         visible={modalVisible}
         transparent={true}
@@ -225,7 +224,6 @@ const PublicacionesScreen = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>Reportar Publicación</Text>
-            
             <View style={styles.reportContainer}>
               {reportReasons.map((reason, index) => (
                 <TouchableOpacity
@@ -245,7 +243,6 @@ const PublicacionesScreen = () => {
                 </TouchableOpacity>
               ))}
             </View>
-
             <TextInput
               style={styles.reportInput}
               multiline
@@ -260,7 +257,6 @@ const PublicacionesScreen = () => {
               <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(false)}>
                 <Text style={styles.cancelButtonText}>Cancelar</Text>
               </TouchableOpacity>
-
               <TouchableOpacity style={styles.acceptButton} onPress={handleReport}>
                 <Text style={styles.acceptButtonText}>Enviar Reporte</Text>
               </TouchableOpacity>
@@ -268,7 +264,6 @@ const PublicacionesScreen = () => {
           </View>
         </View>
       </Modal>
-
       <Toast ref={(ref) => Toast.setRef(ref)} />
     </View>
   );

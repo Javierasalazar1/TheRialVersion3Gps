@@ -53,11 +53,11 @@ const InicioScreen = ({ navigation }) => {
   const fetchPosts = async () => {
     const querySnapshot = await getDocs(collection(firestore, 'posts'));
     let postsData = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-    
+
     if (filter) {
       postsData = applyFilter(postsData, filter);
     }
-    
+
     setPosts(postsData);
   };
 
@@ -169,7 +169,6 @@ const InicioScreen = ({ navigation }) => {
             </Menu>
           </View>
         </View>
-
         {/* Search Bar */}
         <View style={styles.searchContainer}>
           <FontAwesome5 name="search" size={18} color="black" />
@@ -183,17 +182,14 @@ const InicioScreen = ({ navigation }) => {
             <FontAwesome5 name="filter" size={18} color="black" />
           </TouchableOpacity>
         </View>
-
         {/* Content */}
         <ScrollView contentContainerStyle={styles.contentContainer} stickyHeaderIndices={[0, 1]}>
           {renderContent()}
         </ScrollView>
-
         {/* Add Button */}
         <TouchableOpacity style={styles.fab} onPress={toggleMenu}>
           <FontAwesome5 name="plus" size={24} color="white" />
         </TouchableOpacity>
-
         {/* Animated Menu */}
         <Animated.View style={[styles.menuContainer, { height: menuHeight }]}>
           <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('CrearAviso')}>
@@ -206,7 +202,6 @@ const InicioScreen = ({ navigation }) => {
             <Text style={styles.menuText}>Market</Text>
           </TouchableOpacity>
         </Animated.View>
-
         {/* Filters Modal */}
         {showFilters && (
           <Modal
@@ -225,7 +220,6 @@ const InicioScreen = ({ navigation }) => {
                   <Picker.Item label="Más Likes" value="mostLikes" />
                   <Picker.Item label="Menos Likes" value="leastLikes" />
                 </Picker>
-
                 <Text style={styles.filterTitle}>Categorías</Text>
                 <Picker
                   selectedValue={filter.category}
@@ -235,7 +229,6 @@ const InicioScreen = ({ navigation }) => {
                   <Picker.Item label="Juegos" value="juegos" />
                   <Picker.Item label="Búsqueda" value="busqueda" />
                 </Picker>
-
                 <Text style={styles.filterTitle}>Fecha de publicación</Text>
                 <Picker
                   style={styles.filterPicker}
@@ -248,7 +241,6 @@ const InicioScreen = ({ navigation }) => {
                   <Picker.Item label="Este mes" value="thisMonth" />
                   <Picker.Item label="Este año" value="thisYear" />
                 </Picker>
-
                 <View style={styles.filterButtons}>
                   <TouchableOpacity style={styles.filterButtonCancel} onPress={resetFilters}>
                     <Text style={styles.filterButtonText}>Cancelar</Text>
@@ -261,17 +253,16 @@ const InicioScreen = ({ navigation }) => {
             </View>
           </Modal>
         )}
-
         {/* Footer */}
         <View style={styles.footer}>
           <TouchableOpacity onPress={() => setSelectedScreen('Avisos')}>
-            <FontAwesome5 name="bullhorn" size={24} color={selectedScreen === 'Avisos' ? 'tomato' : 'black'} />
+            <FontAwesome5 name="bullhorn" size={24} color={selectedScreen === 'Avisos' ? '#246fa8' : 'black'} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setSelectedScreen('Publicaciones')}>
-            <FontAwesome5 name="home" size={24} color={selectedScreen === 'Publicaciones' ? 'tomato' : 'black'} />
+            <FontAwesome5 name="home" size={24} color={selectedScreen === 'Publicaciones' ? '#246fa8' : 'black'} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setSelectedScreen('Mercado')}>
-            <FontAwesome5 name="shopping-cart" size={24} color={selectedScreen === 'Mercado' ? 'tomato' : 'black'} />
+            <FontAwesome5 name="shopping-cart" size={24} color={selectedScreen === 'Mercado' ? '#246fa8' : 'black'} />
           </TouchableOpacity>
         </View>
       </View>
@@ -295,10 +286,10 @@ const optionsStyles = {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#e3e5e6',
   },
   header: {
-    backgroundColor: '#6a1b9a',
+    backgroundColor: '#143d5c',
     paddingTop: 10,
     paddingBottom: 10,
     paddingHorizontal: 20,
@@ -381,7 +372,7 @@ const styles = StyleSheet.create({
     position: 'fixed',
     right: 20,
     bottom: 70,
-    backgroundColor: '#6a1b9a',
+    backgroundColor: '#143d5c',
     width: 56,
     height: 56,
     borderRadius: 28,
