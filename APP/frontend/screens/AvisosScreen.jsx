@@ -23,7 +23,7 @@ const AvisosScreen = () => {
   const [showReportError, setShowReportError] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false); // Estado para mostrar el modal de filtros
-  const [filter, setFilter] = useState({ order: 'mostLikes', category: 'deportes', date: 'anytime' }); // Estado de los filtros
+  const [filter, setFilter] = useState({category: 'Todas las categorias', date: 'anytime' }); // Estado de los filtros
 
   const reportReasons = [
     "Contenido inapropiado",
@@ -34,6 +34,14 @@ const AvisosScreen = () => {
     "Contenido sexual",
     "Acoso",
     "Otro"
+  ];
+
+   // Define las categorías aquí
+   const categories = [
+    { label: 'Perdida de objeto', value: 'Perdida de objeto' },
+    { label: 'Juegos', value: 'juegos' },
+    { label: 'Búsqueda', value: 'busqueda' },
+    { label: 'queque', value: 'queque' }
   ];
 
   useEffect(() => {
@@ -82,8 +90,9 @@ const AvisosScreen = () => {
   };
 
   const resetFilters = () => {
-    setFilter({ order: 'mostLikes', category: 'deportes', date: 'anytime' });
-  };
+    setFilter({category: 'Todas las categorias', date: 'anytime' });
+    setShowFilters(false);
+    };
 
   const handleFilterSelect = (type, value) => {
     setFilter({ ...filter, [type]: value });
@@ -201,6 +210,7 @@ const AvisosScreen = () => {
         handleFilterSelect={handleFilterSelect}
         resetFilters={resetFilters}
         applyFilters={applyFilters}
+        categories={categories} // Pasa las categorías como prop
       />
 
       {filteredAvisos.length > 0 ? (

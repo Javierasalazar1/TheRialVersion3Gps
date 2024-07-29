@@ -2,7 +2,7 @@ import React from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 
-const FilterModal = ({ visible, onClose, filter, handleFilterSelect, resetFilters, applyFilters }) => {
+const FilterModal = ({ visible, onClose, filter, handleFilterSelect, resetFilters, applyFilters, categories }) => {
   return (
     <Modal
       transparent={true}
@@ -12,25 +12,15 @@ const FilterModal = ({ visible, onClose, filter, handleFilterSelect, resetFilter
     >
       <View style={styles.filterModal}>
         <View style={styles.filterContainer}>
-          <Text style={styles.filterTitle}>Ordenar por:</Text>
-          <Picker
-          style={styles.filterPicker}
-            selectedValue={filter.order}
-            onValueChange={(itemValue) => handleFilterSelect('order', itemValue)}
-          >
-            <Picker.Item label="Más Likes" value="mostLikes" />
-            <Picker.Item label="Menos Likes" value="leastLikes" />
-          </Picker>
-
           <Text style={styles.filterTitle}>Categorías:</Text>
           <Picker
-          style={styles.filterPicker}
+            style={styles.filterPicker}
             selectedValue={filter.category}
             onValueChange={(itemValue) => handleFilterSelect('category', itemValue)}
           >
-            <Picker.Item label="Deportes" value="deportes" />
-            <Picker.Item label="Juegos" value="juegos" />
-            <Picker.Item label="Búsqueda" value="busqueda" />
+            {categories.map((category, index) => (
+              <Picker.Item key={index} label={category.label} value={category.value} />
+            ))}
           </Picker>
 
           <Text style={styles.filterTitle}>Fecha de publicación:</Text>
