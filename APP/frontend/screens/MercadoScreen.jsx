@@ -7,6 +7,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { MenuProvider } from 'react-native-popup-menu';
 import Toast from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { FontAwesome5 } from '@expo/vector-icons';
+import ModalFiltro from './componentes/ModalFiltro';
+
 
 const PAGE_SIZE = 10;
 
@@ -21,16 +24,17 @@ const reportReasons = [
   "Otro"
 ];
 
-const categories = [
-  "Libros y Materiales de Estudio",
-  "Electrónica y Accesorios",
-  "Ropa y Accesorios",
-  "Hogar y Dormitorio",
-  "Deportes y Actividades al Aire Libre",
-  "Transporte",
-  "Entretenimiento y Ocio",
-  "Salud y Belleza",
-  "Servicios"
+ // Define las categorías aquí
+ const categories = [
+  { label: 'Libros y Materiales de Estudio', value: 'Libros y Materiales de Estudio' },
+  { label: 'Electrónica y Accesorios', value: 'Electrónica y Accesorios' },
+  { label: 'Ropa y Accesorios', value: 'Ropa y Accesorios' },
+  { label: 'Hogar y Dormitorio', value: 'Hogar y Dormitorio' },
+  { label: 'Deportes y Actividades al Aire Libre', value: 'Deportes y Actividades al Aire Libre' },
+  { label: 'Transporte', value: 'Transporte' },
+  { label: 'Entretenimiento y Ocio', value: 'Entretenimiento y Ocio' },
+  { label: 'Salud y Belleza', value: 'Salud y Belleza' },
+  { label: 'Servicios', value: 'Servicios' },
 ];
 
 const states = [
@@ -41,6 +45,7 @@ const states = [
 
 const MercadoScreen = () => {
   const [publicaciones, setPublicaciones] = useState([]);
+  const [filteredPublicaciones, setFilteredPublicaciones] = useState([]);
   const [lastVisible, setLastVisible] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -56,11 +61,30 @@ const MercadoScreen = () => {
   const [editedPost, setEditedPost] = useState({ id: '', nombre: '', detalle: '', imagen: '', categoria: '', precio: '', estadoVenta: 'activo' });
   const [selectedImage, setSelectedImage] = useState(null);
   const [imageDeleted, setImageDeleted] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [showFiltters, setShowFiltters] = useState(false); // Estado para mostrar el modal de filtros
+  const [filtter, setFiltter] = useState({category: 'Todas las categorias', date: 'anytime' }); // Estado de los filtros
 
   useEffect(() => {
     fetchPublicaciones();
     fetchUsername();
   }, []);
+
+  useEffect(() => {
+    filterPublicaciones();
+  }, [searchText, publicaciones]); 
+
+  const resetFilters = () => {
+    setFiltter({category: 'Todas las categorias', date: 'anytime' });
+    setShowFiltters(false);
+    };
+    const handleFilterSelect = (type, value) => {
+      setFiltter({ ...filter, [type]: value });
+    };
+    const applyFilters = () => {
+      // Implementa tu lógica de filtros aquí
+      setShowFiltters(false);
+    };
 
   const fetchUsername = async () => {
     try {
@@ -94,6 +118,7 @@ const MercadoScreen = () => {
       });
 
       setPublicaciones(publicacionesList);
+      setFilteredPublicaciones(publicacionesList);
       setLastVisible(publicacionesSnapshot.docs[publicacionesSnapshot.docs.length - 1]);
       setLoading(false);
     } catch (error) {
@@ -132,6 +157,7 @@ const MercadoScreen = () => {
       });
 
       setPublicaciones(prev => [...prev, ...publicacionesList]);
+      setFilteredPublicaciones(prev => [...prev, ...publicacionesList]);
       setLastVisible(publicacionesSnapshot.docs[publicacionesSnapshot.docs.length - 1]);
       setLoadingMore(false);
     } catch (error) {
@@ -285,6 +311,16 @@ const MercadoScreen = () => {
     }
   };
 
+  const filterPublicaciones = () => {
+    const filtered = publicaciones.filter(post =>
+      post.nombre.toLowerCase().includes(searchText.toLowerCase()) ||
+      post.detalle.toLowerCase().includes(searchText.toLowerCase())
+    );
+    setFilteredPublicaciones(filtered);
+  };
+
+
+
   const renderItem = ({ item }) => (
     <View style={styles.item}>
       <View style={styles.header}>
@@ -333,8 +369,33 @@ const MercadoScreen = () => {
 
   return (
     <MenuProvider>
+
+     <View style={styles.searchContaine}>
+       <FontAwesome5 name="search" size={18} color="black" />
+      <TextInput
+        style={styles.searchInpu}
+        placeholder=" Buscar..."
+        value={searchText}
+        onChangeText={text => setSearchText(text)}
+      />
+       <TouchableOpacity style={styles.filterButton} onPress={() => setShowFiltters(true)}>
+            <FontAwesome5 name="filter" size={18} color="black" />
+          </TouchableOpacity>
+      </View>
+      
+      <ModalFiltro
+        visible={showFiltters}
+        onClose={() => setShowFiltters(false)}
+        filter={filtter}
+        handleFilterSelect={handleFilterSelect}
+        resetFilters={resetFilters}
+        applyFilters={applyFilters}
+        categories={categories} // Pasa las categorías como prop
+      />
+
+
       <FlatList
-        data={publicaciones}
+        data={filteredPublicaciones}
         renderItem={renderItem}
         keyExtractor={item => item.id}
         onEndReached={fetchMorePublicaciones}
@@ -408,7 +469,7 @@ const MercadoScreen = () => {
               style={styles.input}
             >
               {categories.map((category, index) => (
-                <Picker.Item key={index} label={category} value={category} />
+                <Picker.Item key={index} label={category.label} value={category.value} />
               ))}
             </Picker>
             <TextInput
@@ -497,6 +558,28 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 10,
   },
+  searchContaine: {
+    flexDirection: 'row',
+    backgroundColor: '#eee',
+    borderRadius: 5,
+    margin: 10,
+    padding: 10,
+    alignItems: 'center',
+    position: 'sticky',
+    top: 0,
+    zIndex: 10,
+    bottom: 30,
+  },
+  searchInpu: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  filterButto: {
+    marginLeft: 10,
+  },
+  filterButton: {
+    marginLeft: 10,
+  },
   item: {
     backgroundColor: '#fff',
     padding: 20,
@@ -545,6 +628,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'right',
     marginBottom: 5,
+    
   },
   loadingContainer: {
     flex: 1,
