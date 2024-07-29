@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, ActivityIndicator, TouchableOpacity, Alert, Modal, TextInput, Button } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image, ActivityIndicator, TouchableOpacity, Alert, Modal, TextInput, Button, Picker } from 'react-native';
 import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import * as ImagePicker from 'expo-image-picker';
@@ -21,6 +21,24 @@ const reportReasons = [
   "Otro"
 ];
 
+const categories = [
+  "Libros y Materiales de Estudio",
+  "Electrónica y Accesorios",
+  "Ropa y Accesorios",
+  "Hogar y Dormitorio",
+  "Deportes y Actividades al Aire Libre",
+  "Transporte",
+  "Entretenimiento y Ocio",
+  "Salud y Belleza",
+  "Servicios"
+];
+
+const states = [
+  { label: 'Activo', value: 'activo' },
+  { label: 'Pausado', value: 'pausado' },
+  { label: 'Sin stock', value: 'sin_stock' }
+];
+
 const MercadoScreen = () => {
   const [publicaciones, setPublicaciones] = useState([]);
   const [lastVisible, setLastVisible] = useState(null);
@@ -35,7 +53,7 @@ const MercadoScreen = () => {
   const [username, setUsername] = useState('');
   const [optionsModalVisible, setOptionsModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editedPost, setEditedPost] = useState({ id: '', nombre: '', detalle: '', imagen: '' });
+  const [editedPost, setEditedPost] = useState({ id: '', nombre: '', detalle: '', imagen: '', categoria: '', precio: '', estadoVenta: 'activo' });
   const [selectedImage, setSelectedImage] = useState(null);
   const [imageDeleted, setImageDeleted] = useState(false);
 
@@ -130,7 +148,10 @@ const MercadoScreen = () => {
         id: postToEdit.id,
         nombre: postToEdit.nombre,
         detalle: postToEdit.detalle,
-        imagen: postToEdit.imagen || ''
+        imagen: postToEdit.imagen || '',
+        categoria: postToEdit.categoria || '',
+        precio: postToEdit.precio || '',
+        estadoVenta: postToEdit.estadoVenta || 'activo'
       });
       setEditModalVisible(true);
       setImageDeleted(false);
@@ -170,7 +191,10 @@ const MercadoScreen = () => {
       await updateDoc(postRef, {
         nombre: editedPost.nombre,
         detalle: editedPost.detalle,
-        imagen: imageUrl
+        imagen: imageUrl,
+        categoria: editedPost.categoria,
+        precio: editedPost.precio,
+        estadoVenta: editedPost.estadoVenta
       });
 
       Alert.alert('Publicación actualizada', 'La publicación ha sido actualizada con éxito.');
@@ -279,7 +303,10 @@ const MercadoScreen = () => {
       ) : null}
       <Text style={styles.title}>{item.nombre}</Text>
       <Text style={styles.detalle}>{item.detalle}</Text>
-      <Text style={styles.fecha}>{item.fecha}</Text>
+      <View style={styles.footer}>
+        <Text style={styles.precio}>${item.precio}</Text>
+        <Text style={styles.fecha}>{item.fecha}</Text>
+      </View>
     </View>
   );
 
@@ -365,16 +392,41 @@ const MercadoScreen = () => {
             <TextInput
               style={styles.input}
               value={editedPost.nombre}
-              onChangeText={(text) => setEditedPost({...editedPost, nombre: text})}
+              onChangeText={(text) => setEditedPost({ ...editedPost, nombre: text })}
               placeholder="Título"
             />
             <TextInput
               style={[styles.input, { height: 100 }]}
               value={editedPost.detalle}
-              onChangeText={(text) => setEditedPost({...editedPost, detalle: text})}
+              onChangeText={(text) => setEditedPost({ ...editedPost, detalle: text })}
               placeholder="Detalles"
               multiline
             />
+            <Picker
+              selectedValue={editedPost.categoria}
+              onValueChange={(itemValue) => setEditedPost({ ...editedPost, categoria: itemValue })}
+              style={styles.input}
+            >
+              {categories.map((category, index) => (
+                <Picker.Item key={index} label={category} value={category} />
+              ))}
+            </Picker>
+            <TextInput
+              style={styles.input}
+              value={editedPost.precio}
+              onChangeText={(text) => setEditedPost({ ...editedPost, precio: text })}
+              placeholder="Precio"
+              keyboardType="numeric"
+            />
+            <Picker
+              selectedValue={editedPost.estadoVenta}
+              onValueChange={(itemValue) => setEditedPost({ ...editedPost, estadoVenta: itemValue })}
+              style={styles.input}
+            >
+              {states.map((state, index) => (
+                <Picker.Item key={index} label={state.label} value={state.value} />
+              ))}
+            </Picker>
             <View style={styles.imagePickerContainer}>
               <Button title="Seleccionar Imagen" onPress={handleImagePicker} />
               {selectedImage && (
@@ -473,19 +525,9 @@ const styles = StyleSheet.create({
     height: 200,
     marginBottom: 10,
   },
-  placeholderContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: 200,
-    backgroundColor: '#f0f0f0',
-    marginBottom: 10,
-  },
-  placeholderText: {
-    color: 'gray',
-  },
   title: {
-    fontSize: 18,
     fontWeight: 'bold',
+    fontSize: 16,
     marginBottom: 5,
   },
   detalle: {
@@ -494,9 +536,15 @@ const styles = StyleSheet.create({
   fecha: {
     fontSize: 12,
     color: 'gray',
+    textAlign: 'right',
   },
   name: {
     fontWeight: 'bold',
+  },
+  precio: {
+    fontWeight: 'bold',
+    textAlign: 'right',
+    marginBottom: 5,
   },
   loadingContainer: {
     flex: 1,
@@ -536,7 +584,7 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderWidth: 1,
     borderRadius: 5,
-    minHeight: 100,
+    minHeight: 40,
     padding: 10,
     marginTop: 10,
     marginBottom: 20,
@@ -613,6 +661,10 @@ const styles = StyleSheet.create({
     color: 'red',
     marginTop: 10,
     textAlign: 'center',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
 });
 
