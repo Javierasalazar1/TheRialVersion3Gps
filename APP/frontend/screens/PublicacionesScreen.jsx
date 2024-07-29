@@ -33,16 +33,15 @@ const PublicacionesScreen = () => {
 
       const publicacionesList = await Promise.all(publicacionesSnapshot.docs.map(async (docSnapshot) => {
         const data = docSnapshot.data();
-
+      
         // Asegúrate de que el campo username exista en el documento de publicación
         return {
           id: docSnapshot.id,
           ...data,
           userName: data.username || 'Usuario desconocido', // Usa el campo username del documento
         };
-      });
-  
-
+      }));  // Cierre correcto del bloque Promise.all
+      
       setPublicaciones(publicacionesList);
       setLastVisible(publicacionesSnapshot.docs[publicacionesSnapshot.docs.length - 1]);
     } catch (error) {
