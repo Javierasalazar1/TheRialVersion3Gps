@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, ActivityIndicator, TouchableOpacity, Alert, Modal, TextInput, Button } from 'react-native';
-import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { View, Text, StyleSheet, FlatList, Image, ActivityIndicator, TouchableOpacity, Alert, Modal, TextInput, Button, Picker } from 'react-native';
+import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs, deleteDoc, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-import { Menu, MenuOptions, MenuOption, MenuTrigger, MenuProvider } from 'react-native-popup-menu';
+import { MenuProvider } from 'react-native-popup-menu';
 import Toast from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -19,6 +21,24 @@ const reportReasons = [
   "Otro"
 ];
 
+const categories = [
+  "Libros y Materiales de Estudio",
+  "Electrónica y Accesorios",
+  "Ropa y Accesorios",
+  "Hogar y Dormitorio",
+  "Deportes y Actividades al Aire Libre",
+  "Transporte",
+  "Entretenimiento y Ocio",
+  "Salud y Belleza",
+  "Servicios"
+];
+
+const states = [
+  { label: 'Activo', value: 'activo' },
+  { label: 'Pausado', value: 'pausado' },
+  { label: 'Sin stock', value: 'sin_stock' }
+];
+
 const MercadoScreen = () => {
   const [publicaciones, setPublicaciones] = useState([]);
   const [lastVisible, setLastVisible] = useState(null);
@@ -33,8 +53,10 @@ const MercadoScreen = () => {
   const [username, setUsername] = useState('');
   const [optionsModalVisible, setOptionsModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editedPost, setEditedPost] = useState({ id: '', nombre: '', detalle: '' });
-  
+  const [editedPost, setEditedPost] = useState({ id: '', nombre: '', detalle: '', imagen: '', categoria: '', precio: '', estadoVenta: 'activo' });
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imageDeleted, setImageDeleted] = useState(false);
+
   useEffect(() => {
     fetchPublicaciones();
     fetchUsername();
@@ -125,9 +147,15 @@ const MercadoScreen = () => {
       setEditedPost({
         id: postToEdit.id,
         nombre: postToEdit.nombre,
-        detalle: postToEdit.detalle
+        detalle: postToEdit.detalle,
+        imagen: postToEdit.imagen || '',
+        categoria: postToEdit.categoria || '',
+        precio: postToEdit.precio || '',
+        estadoVenta: postToEdit.estadoVenta || 'activo'
       });
       setEditModalVisible(true);
+      setImageDeleted(false);
+      setSelectedImage(null);
     }
     setOptionsModalVisible(false);
   };
@@ -136,12 +164,42 @@ const MercadoScreen = () => {
     try {
       const db = getFirestore();
       const postRef = doc(db, 'Mercado', editedPost.id);
+
+      let imageUrl = editedPost.imagen;
+      if (selectedImage) {
+        const storage = getStorage();
+        const imageRef = ref(storage, `images/${Date.now()}_${selectedImage.uri.split('/').pop()}`);
+        const img = await fetch(selectedImage.uri);
+        const bytes = await img.blob();
+
+        await uploadBytes(imageRef, bytes);
+        imageUrl = await getDownloadURL(imageRef);
+
+        if (editedPost.imagen) {
+          const oldImageRef = ref(storage, editedPost.imagen);
+          await deleteObject(oldImageRef);
+        }
+      } else if (imageDeleted) {
+        if (editedPost.imagen) {
+          const storage = getStorage();
+          const oldImageRef = ref(storage, editedPost.imagen);
+          await deleteObject(oldImageRef);
+        }
+        imageUrl = '';
+      }
+
       await updateDoc(postRef, {
         nombre: editedPost.nombre,
-        detalle: editedPost.detalle
+        detalle: editedPost.detalle,
+        imagen: imageUrl,
+        categoria: editedPost.categoria,
+        precio: editedPost.precio,
+        estadoVenta: editedPost.estadoVenta
       });
+
       Alert.alert('Publicación actualizada', 'La publicación ha sido actualizada con éxito.');
       setEditModalVisible(false);
+      setSelectedImage(null);
       fetchPublicaciones(); // Refresh the posts
     } catch (error) {
       console.error('Error updating post:', error);
@@ -149,11 +207,22 @@ const MercadoScreen = () => {
     }
   };
 
-
   const handleDeletePost = async (postId) => {
     try {
       const db = getFirestore();
-      await deleteDoc(doc(db, 'Mercado', postId));
+      const postRef = doc(db, 'Mercado', postId);
+      const postSnapshot = await getDoc(postRef);
+
+      if (postSnapshot.exists()) {
+        const postData = postSnapshot.data();
+        if (postData.imagen) {
+          const storage = getStorage();
+          const imageRef = ref(storage, postData.imagen);
+          await deleteObject(imageRef);
+        }
+      }
+
+      await deleteDoc(postRef);
       Alert.alert('Publicación eliminada', 'La publicación ha sido eliminada con éxito.');
       fetchPublicaciones();
     } catch (error) {
@@ -202,6 +271,20 @@ const MercadoScreen = () => {
     setOptionsModalVisible(true);
   };
 
+  const handleImagePicker = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setSelectedImage(result.assets[0]);
+      setImageDeleted(false);
+    }
+  };
+
   const renderItem = ({ item }) => (
     <View style={styles.item}>
       <View style={styles.header}>
@@ -211,38 +294,166 @@ const MercadoScreen = () => {
             <Ionicons name="flag-outline" size={24} color="red" style={styles.reportIcon} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => handleOpenOptions(item.id)}>
-            <Ionicons name="ellipsis-vertical" size={22} color="black" />
+            <Ionicons name="ellipsis-vertical" size={24} color="black" />
           </TouchableOpacity>
         </View>
       </View>
       {item.imagen ? (
-        <View style={styles.ima}>
-          <Image source={{ uri: item.imagen }} style={styles.image} />
-        </View>
+        <Image source={{ uri: item.imagen }} style={styles.image} />
       ) : null}
       <Text style={styles.title}>{item.nombre}</Text>
-      <View style={styles.header}>
-        <Text style={styles.userEmail}>{item.detalle}</Text>
-        <Text style={styles.date}>{item.fecha}</Text>
+      <Text style={styles.detalle}>{item.detalle}</Text>
+      <View style={styles.footer}>
+        <Text style={styles.precio}>${item.precio}</Text>
+        <Text style={styles.fecha}>{item.fecha}</Text>
       </View>
     </View>
   );
-//WEna gente pan con jamon rico rico ñam ñam 
+
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+    return <ActivityIndicator size="large" color="#0000ff" />;
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Error: {error}</Text>
+      </View>
+    );
+  }
+
   return (
     <MenuProvider>
-      <View style={styles.container}>
-        <FlatList
-          data={publicaciones}
-          renderItem={renderItem}
-          keyExtractor={item => item.id}
-          onEndReached={fetchMorePublicaciones}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#0000ff" />}
-          contentContainerStyle={{ flexGrow: 1 }}
-          style={{ flex: 1 }}
-        />
-      </View>
-
+      <FlatList
+        data={publicaciones}
+        renderItem={renderItem}
+        keyExtractor={item => item.id}
+        onEndReached={fetchMorePublicaciones}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={renderFooter}
+      />
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        onRequestClose={handleCloseModal}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Reportar publicación</Text>
+            <View style={styles.reasonsContainer}>
+              {reportReasons.map((reason, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => setReportReason(reason)}
+                  style={[
+                    styles.reportOption,
+                    reportReason === reason ? styles.selectedReportOption : null
+                  ]}
+                >
+                  <Text style={[styles.reportOptionText, reportReason === reason ? styles.selectedReportOptionText : null]}>{reason}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TextInput
+              style={styles.input}
+              value={reportDetails}
+              onChangeText={text => setReportDetails(text)}
+              placeholder="Detalles adicionales (opcional)"
+              multiline
+            />
+            {showReportError && (
+              <Text style={styles.errorText}>Selecciona un motivo antes de enviar el reporte.</Text>
+            )}
+            <View style={styles.modalButtons}>
+              <Button title="Cancelar" onPress={handleCloseModal} color="red" />
+              <Button title="Enviar" onPress={handleReportSubmit} />
+            </View>
+          </View>
+        </View>
+      </Modal>
+      <Modal
+        visible={editModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setEditModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Editar publicación</Text>
+            <TextInput
+              style={styles.input}
+              value={editedPost.nombre}
+              onChangeText={(text) => setEditedPost({ ...editedPost, nombre: text })}
+              placeholder="Título"
+            />
+            <TextInput
+              style={[styles.input, { height: 100 }]}
+              value={editedPost.detalle}
+              onChangeText={(text) => setEditedPost({ ...editedPost, detalle: text })}
+              placeholder="Detalles"
+              multiline
+            />
+            <Picker
+              selectedValue={editedPost.categoria}
+              onValueChange={(itemValue) => setEditedPost({ ...editedPost, categoria: itemValue })}
+              style={styles.input}
+            >
+              {categories.map((category, index) => (
+                <Picker.Item key={index} label={category} value={category} />
+              ))}
+            </Picker>
+            <TextInput
+              style={styles.input}
+              value={editedPost.precio}
+              onChangeText={(text) => setEditedPost({ ...editedPost, precio: text })}
+              placeholder="Precio"
+              keyboardType="numeric"
+            />
+            <Picker
+              selectedValue={editedPost.estadoVenta}
+              onValueChange={(itemValue) => setEditedPost({ ...editedPost, estadoVenta: itemValue })}
+              style={styles.input}
+            >
+              {states.map((state, index) => (
+                <Picker.Item key={index} label={state.label} value={state.value} />
+              ))}
+            </Picker>
+            <View style={styles.imagePickerContainer}>
+              <Button title="Seleccionar Imagen" onPress={handleImagePicker} />
+              {selectedImage && (
+                <Image source={{ uri: selectedImage.uri }} style={styles.selectedImage} />
+              )}
+              {imageDeleted && (
+                <Text style={styles.imageDeletedText}>Imagen será eliminada</Text>
+              )}
+              {!selectedImage && !imageDeleted && editedPost.imagen ? (
+                <Image source={{ uri: editedPost.imagen }} style={styles.selectedImage} />
+              ) : null}
+            </View>
+            <Button
+              title="Eliminar Imagen"
+              onPress={() => {
+                setSelectedImage(null);
+                setImageDeleted(true);
+              }}
+              color="red"
+            />
+            <View style={styles.modalButtons}>
+              <Button title="Cancelar" onPress={() => setEditModalVisible(false)} color="red" />
+              <Button title="Guardar" onPress={handleUpdatePost} />
+            </View>
+          </View>
+        </View>
+      </Modal>
       <Modal
         visible={optionsModalVisible}
         transparent={true}
@@ -276,85 +487,6 @@ const MercadoScreen = () => {
           </View>
         </TouchableOpacity>
       </Modal>
-
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={handleCloseModal}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Reportar publicación</Text>
-            <View style={styles.reasonsContainer}>
-              {reportReasons.map((reason, index) => (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => setReportReason(reason)}
-                  style={[
-                    styles.reportOption,
-                    reportReason === reason ? styles.selectedReportOption : null
-                  ]}
-                >
-                  <Text style={[styles.reportOptionText, reportReason === reason ? styles.selectedReportOptionText : null]}>{reason}</Text>
-                  </TouchableOpacity>
-              ))}
-            </View>
-            <TextInput
-              style={styles.input}
-              value={reportDetails}
-              onChangeText={text => setReportDetails(text)}
-              placeholder="Detalles adicionales (opcional)"
-              multiline
-            />
-            {showReportError && (
-              <Text style={styles.errorText}>Selecciona un motivo antes de enviar el reporte.</Text>
-            )}
-            <View style={styles.modalButtons}>
-              <Button title="Cancelar" onPress={handleCloseModal} color="red" />
-              <Button title="Enviar" onPress={handleReportSubmit} />
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-
-
-
-            {/* Edit Modal */}
-      <Modal
-        visible={editModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setEditModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Editar publicación</Text>
-            <TextInput
-              style={styles.input}
-              value={editedPost.nombre}
-              onChangeText={(text) => setEditedPost({...editedPost, nombre: text})}
-              placeholder="Título"
-            />
-            <TextInput
-              style={[styles.input, { height: 100 }]}
-              value={editedPost.detalle}
-              onChangeText={(text) => setEditedPost({...editedPost, detalle: text})}
-              placeholder="Detalles"
-              multiline
-            />
-            <View style={styles.modalButtons}>
-              <Button title="Cancelar" onPress={() => setEditModalVisible(false)} color="red" />
-              <Button title="Guardar" onPress={handleUpdatePost} />
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-
-
-
       <Toast ref={(ref) => Toast.setRef(ref)} />
     </MenuProvider>
   );
@@ -381,39 +513,51 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     justifyContent: 'space-between',
   },
-  ima: {
+  headerRight: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  date: {
-    fontSize: 12,
-    color: 'gray',
-    minWidth: '100px',
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    flex: 1,
-  },
-  userEmail: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 5,
-    color: '#555',
-    maxWidth: '250px',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
+  reportIcon: {
+    marginRight: 10,
   },
   image: {
     width: '100%',
     height: 200,
-    borderRadius: 10,
     marginBottom: 10,
   },
-  reportIcon: {
-    marginLeft: 10,
+  title: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginBottom: 5,
+  },
+  detalle: {
+    marginBottom: 5,
+  },
+  fecha: {
+    fontSize: 12,
+    color: 'gray',
+    textAlign: 'right',
+  },
+  name: {
+    fontWeight: 'bold',
+  },
+  precio: {
+    fontWeight: 'bold',
+    textAlign: 'right',
+    marginBottom: 5,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    color: 'red',
   },
   modalContainer: {
     flex: 1,
@@ -434,14 +578,13 @@ const styles = StyleSheet.create({
   },
   modalLabel: {
     fontSize: 16,
-    marginBottom: 5,
-    alignSelf: 'flex-start',
+    marginBottom: 10,
   },
   input: {
     borderColor: '#ccc',
     borderWidth: 1,
     borderRadius: 5,
-    minHeight: 100,
+    minHeight: 40,
     padding: 10,
     marginTop: 10,
     marginBottom: 20,
@@ -505,9 +648,23 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
   },
-  headerRight: {
-    flexDirection: 'row',
+  imagePickerContainer: {
+    marginBottom: 20,
     alignItems: 'center',
+  },
+  selectedImage: {
+    width: 100,
+    height: 100,
+    marginTop: 10,
+  },
+  imageDeletedText: {
+    color: 'red',
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
 });
 
