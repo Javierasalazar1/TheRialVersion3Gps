@@ -1,17 +1,16 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, ActivityIndicator, TextInput, Button, Image, Alert } from 'react-native';
 import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import { FontAwesome5 } from '@expo/vector-icons';
-import FilterModal from './componentes/ModalFiltro';
 
 const PAGE_SIZE = 10;
 
 const AvisosScreen = () => {
   const [avisos, setAvisos] = useState([]);
-  const [filteredAvisos, setFilteredAvisos] = useState([]);
   const [lastVisible, setLastVisible] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -21,8 +20,8 @@ const AvisosScreen = () => {
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [reportDetails, setReportDetails] = useState("");
-  const [showReportError, setShowReportError] = useState(false);
 
+  const [showReportError, setShowReportError] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
@@ -38,21 +37,9 @@ const AvisosScreen = () => {
     "Otro"
   ];
 
-   // Define las categorías aquí
-   const categories = [
-    { label: 'Perdida de objeto', value: 'Perdida de objeto' },
-    { label: 'Juegos', value: 'juegos' },
-    { label: 'Búsqueda', value: 'busqueda' },
-    { label: 'queque', value: 'queque' }
-  ];
-
   useEffect(() => {
     fetchAvisos();
   }, []);
-
-  useEffect(() => {
-    filterAvisos();
-  }, [searchTerm, avisos]);
 
   const fetchAvisos = async () => {
     try {
@@ -67,7 +54,6 @@ const AvisosScreen = () => {
       }));
 
       setAvisos(avisosList);
-      setFilteredAvisos(avisosList);
       setLastVisible(avisosSnapshot.docs[avisosSnapshot.docs.length - 1]);
     } catch (error) {
       console.error("Error al obtener avisos:", error);
@@ -77,36 +63,9 @@ const AvisosScreen = () => {
     }
   };
 
-  const filterAvisos = () => {
-    if (searchTerm === '') {
-      setFilteredAvisos(avisos);
-    } else {
-      const termLower = searchTerm.toLowerCase();
-      const filtered = avisos.filter(aviso => {
-        const titulo = aviso.titulo?.toLowerCase() || '';
-        const contenido = aviso.contenido?.toLowerCase() || '';
-        return titulo.includes(termLower) || contenido.includes(termLower);
-      });
-      setFilteredAvisos(filtered);
-    }
-  };
-
-  const resetFilters = () => {
-    setFilter({category: 'Todas las categorias', date: 'anytime' });
-    setShowFilters(false);
-    };
-
-  const handleFilterSelect = (type, value) => {
-    setFilter({ ...filter, [type]: value });
-  };
-  const applyFilters = () => {
-    // Implementa tu lógica de filtros aquí
-    setShowFilters(false);
-  };
-
-
   const fetchMoreAvisos = async () => {
     if (!lastVisible || loadingMore) return;
+
     setLoadingMore(true);
     try {
       const db = getFirestore();
@@ -143,23 +102,44 @@ const AvisosScreen = () => {
     setSelectedAviso(item);
     setReportReason("");
     setReportDetails("");
-    setShowReportError(false);
+    setShowReportError(false); // Reiniciar el estado de error al abrir el modal
     setReportModalVisible(true);
   };
 
-  const handleReportSubmit = () => {
+  const handleReportSubmit = async () => {
     if (!reportReason) {
       setShowReportError(true);
       return;
     }
 
-    Toast.show({
-      type: 'success',
-      text1: 'Reporte enviado',
-      text2: 'Tu reporte ha sido enviado con éxito.'
-    });
+    try {
+      const db = getFirestore();
+      await addDoc(collection(db, 'reportes'), {
+        reason: reportReason,
+        additionalInfo: reportDetails,
+        timestamp: new Date(),
+        avisoId: selectedAviso.id,
+      });
 
-    setReportModalVisible(false);
+     setReportModalVisible(false); // Cerrar el modal primero
+
+      Toast.show({
+        type: 'success',
+        text1: 'Reporte enviado',
+        text2: 'Tu reporte ha sido enviado con éxito.',
+      });
+
+      setReportReason('');
+      setReportDetails('');
+    } catch (error) {
+      setReportModalVisible(false);
+      console.error('Error enviando el reporte:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Hubo un problema al enviar el reporte.',
+      });
+    }
   };
 
   const handleDelete = async (item) => {
@@ -245,7 +225,7 @@ const AvisosScreen = () => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#143d5c" />
         <Text style={styles.text}>Cargando avisos...</Text>
       </View>
     );
@@ -261,42 +241,15 @@ const AvisosScreen = () => {
 
   return (
     <View style={styles.container}>
-     <View style={styles.searchContainer}>
-       <FontAwesome5 name="search" size={18} color="black" />
-      <TextInput
-        style={styles.searchInput}
-        placeholder=" Buscar..."
-        value={searchTerm}
-        onChangeText={setSearchTerm}
+      <FlatList
+        data={avisos}
+        renderItem={renderItem}
+        keyExtractor={item => item.id}
+        onEndReached={fetchMoreAvisos}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#143d5c" />}
+        contentContainerStyle={styles.flatlistContent}
       />
-       <TouchableOpacity style={styles.filterButton} onPress={() => setShowFilters(true)}>
-            <FontAwesome5 name="filter" size={18} color="black" />
-          </TouchableOpacity>
-      </View>
-      
-      <FilterModal
-        visible={showFilters}
-        onClose={() => setShowFilters(false)}
-        filter={filter}
-        handleFilterSelect={handleFilterSelect}
-        resetFilters={resetFilters}
-        applyFilters={applyFilters}
-        categories={categories} // Pasa las categorías como prop
-      />
-
-      {filteredAvisos.length > 0 ? (
-        <FlatList
-          data={filteredAvisos}
-          renderItem={renderItem}
-          keyExtractor={item => item.id}
-          onEndReached={fetchMoreAvisos}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#0000ff" />}
-          contentContainerStyle={styles.flatlistContent}
-        />
-      ) : (
-        <Text style={styles.noResultsText}>No se encontraron resultados</Text>
-      )}
       {selectedAviso && (
         <Modal
           animationType="slide"
@@ -316,6 +269,7 @@ const AvisosScreen = () => {
           </View>
         </Modal>
       )}
+
       <Modal
         animationType="slide"
         transparent={true}
@@ -343,12 +297,14 @@ const AvisosScreen = () => {
           </View>
         </View>
       </Modal>
+
       <Modal
         animationType="slide"
         transparent={true}
         visible={reportModalVisible}
         onRequestClose={() => setReportModalVisible(false)}
       >
+
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Reportar Aviso</Text>
@@ -362,6 +318,7 @@ const AvisosScreen = () => {
               <Text style={styles.errorText}>Por favor, selecciona una razón para el reporte.</Text>
             )}
 
+
             <TextInput
               style={styles.input}
               value={reportDetails}
@@ -369,11 +326,13 @@ const AvisosScreen = () => {
               placeholder="Detalles adicionales"
               multiline
             />
+
             <Button title="Enviar" onPress={handleReportSubmit} />
             <Button title="Cancelar" onPress={() => setReportModalVisible(false)} />
           </View>
         </View>
       </Modal>
+
     </View>
   );
 };
@@ -384,6 +343,7 @@ const styles = StyleSheet.create({
 
     backgroundColor: '#fff',
   },
+
   itemContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -425,6 +385,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -477,11 +438,6 @@ const styles = StyleSheet.create({
     height: 200,
     resizeMode: 'contain',
     marginBottom: 10,
-  },
-  noResultsText: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginTop: 20,
   },
 });
 

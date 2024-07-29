@@ -47,7 +47,7 @@ const CrearAvisoScreen = () => {
       aspect: [4, 3],
       quality: 1,
     });
-  
+
     if (!result.canceled && result.assets && result.assets.length > 0) {
       setImage(result.assets[0].uri);
     }
@@ -63,12 +63,12 @@ const CrearAvisoScreen = () => {
       alert('Debes estar autenticado para crear un aviso.');
       return;
     }
-  
+
     setLoading(true);
     try {
       const db = getFirestore();
       let imageUrl = null;
-  
+
       if (image) {
         try {
           imageUrl = await uploadFileToStorage({
@@ -82,7 +82,7 @@ const CrearAvisoScreen = () => {
           throw new Error('Error al subir la imagen: ' + imageError.message);
         }
       }
-  
+
       const docRef = await addDoc(collection(db, 'avisos'), {
         titulo,
         contenido,
@@ -91,9 +91,9 @@ const CrearAvisoScreen = () => {
         userId: currentUser.uid,
         username: username, // Almacena el nombre de usuario en el documento
       });
-  
+
       console.log('Documento agregado con ID: ', docRef.id);
-  
+
       setImage(null);
       setTitulo('');
       setContenido('');
@@ -128,7 +128,6 @@ const CrearAvisoScreen = () => {
         onChangeText={setContenido}
         multiline
       />
-    
       <TouchableOpacity style={styles.uploadButton} onPress={handleUpload} disabled={loading}>
         <Text style={styles.uploadButtonText}>Subir Aviso</Text>
       </TouchableOpacity>
