@@ -22,7 +22,7 @@ const AvisosScreen = () => {
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
   const [editCategory, setEditCategory] = useState("");
-  const [dropdownMenuVisible, setDropdownMenuVisible] = useState({});
+  const [dropdownMenuVisible, setDropdownMenuVisible] = useState({}); // Usar un objeto para manejar visibilidad por ID
 
   const reportReasons = [
     "Contenido inapropiado",
@@ -144,7 +144,7 @@ const AvisosScreen = () => {
     setSelectedAviso(item);
     setEditTitle(item.titulo);
     setEditContent(item.contenido);
-    setEditCategory(item.categoria);
+    setEditCategory(item.categoria); // Corregido para que coincida con el campo en la base de datos
     setEditModalVisible(true);
   };
 
@@ -154,7 +154,7 @@ const AvisosScreen = () => {
       await updateDoc(doc(db, 'avisos', selectedAviso.id), {
         titulo: editTitle,
         contenido: editContent,
-        categoria: editCategory
+        categoria: editCategory // Corregido para que coincida con el campo en la base de datos
       });
 
       setAvisos(prevAvisos => prevAvisos.map(aviso => aviso.id === selectedAviso.id ? { ...aviso, titulo: editTitle, contenido: editContent, categoria: editCategory } : aviso));
@@ -179,7 +179,7 @@ const AvisosScreen = () => {
       <TouchableOpacity onPress={() => handlePress(item)} style={styles.item}>
         <Text style={styles.title}>{item.titulo}</Text>
         <Text style={styles.username}>{item.username}</Text>
-        <Text style={styles.category}>{item.categoria}</Text>
+        <Text style={styles.category}>{item.categoria}</Text> {/* Corregido para que coincida con el campo en la base de datos */}
       </TouchableOpacity>
       <View style={styles.optionsContainer}>
         <TouchableOpacity onPress={() => handleReportPress(item)} style={styles.iconButton}>
@@ -223,14 +223,13 @@ const AvisosScreen = () => {
         />
       )}
 
+      {/* Modales */}
       <Modal visible={modalVisible} transparent={true} animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>{selectedAviso?.titulo}</Text>
-            <Text style={styles.modalDate}>
-              {selectedAviso?.fecha?.toDate().toLocaleDateString()}
-            </Text>
             <Text style={styles.modalText}>{selectedAviso?.contenido}</Text>
+            {/* Mostrar imagen si hay */}
             {selectedAviso?.imagen && <Image source={{ uri: selectedAviso.imagen }} style={styles.modalImage} />}
             <Text style={styles.modalCategory}>{selectedAviso?.categoria}</Text>
             <Button title="Cerrar" onPress={() => setModalVisible(false)} />
@@ -330,13 +329,13 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.3,
     shadowRadius: 2,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: 'row', // Asegura que los elementos se alineen en una fila
+    justifyContent: 'space-between', // Distribuye el espacio entre los elementos
     alignItems: 'center',
   },
   item: {
-    flex: 1,
-    marginRight: 16,
+    flex: 1, // Permite que el contenido del item ocupe el espacio disponible
+    marginRight: 16, // Espacio entre el contenido del item y los íconos
   },
   title: {
     fontSize: 18,
@@ -348,9 +347,9 @@ const styles = StyleSheet.create({
   },
   category: {
     fontSize: 14,
-    color: '#00BFFF',
+    color: '#00BFFF',  // Color celeste
     fontStyle: 'italic',
-    marginTop: 10,
+    marginTop: 10,  // Espacio adicional
   },
   optionsContainer: {
     flexDirection: 'row',
@@ -399,11 +398,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 8,
   },
-  modalDate: {
-    fontSize: 14,
-    color: '#888',
-    marginBottom: 8,
-  },
   modalSubtitle: {
     fontSize: 16,
     marginBottom: 4,
@@ -420,10 +414,11 @@ const styles = StyleSheet.create({
   },
   modalCategory: {
     fontSize: 16,
-    color: '#00BFFF',
+    color: '#00BFFF',  // Color celeste
     fontStyle: 'italic',
-    marginTop: 10,
-  }, textInput: {
+    marginTop: 10,  // Espacio adicional
+  },
+  textInput: {
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
