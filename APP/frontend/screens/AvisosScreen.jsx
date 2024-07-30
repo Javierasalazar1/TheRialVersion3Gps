@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, ActivityIndi
 import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
+import { FontAwesome5 } from '@expo/vector-icons';
+import FilterModal from './componentes/ModalFiltro';
 
 const PAGE_SIZE = 10;
 
@@ -24,6 +26,12 @@ const AvisosScreen = () => {
   const [editCategory, setEditCategory] = useState("");
   const [dropdownMenuVisible, setDropdownMenuVisible] = useState({}); // Usar un objeto para manejar visibilidad por ID
 
+//mis filtros
+const [filteredAvisos, setFilteredAvisos] = useState([]);
+const [searchTerm, setSearchTerm] = useState('');
+const [showFilters, setShowFilters] = useState(false); // Estado para mostrar el modal de filtros
+const [filter, setFilter] = useState({category: 'Todas las categorias', date: 'anytime' }); // Estado de los filtros
+
   const reportReasons = [
     "Contenido inapropiado",
     "Spam",
@@ -35,9 +43,26 @@ const AvisosScreen = () => {
     "Otro"
   ];
 
+  // Define las categorías aquí
+  const categories = [
+    { label: 'Tareas', value: 'Tareas' },
+    { label: 'Apuntes', value: 'Apuntes' },
+    { label: 'Eventos', value: 'Eventos' },
+    { label: 'Servicios', value: 'Servicios' },
+    { label: 'Anuncios', value: 'Anuncios' },
+    { label: 'Cosas Perdidas', value: 'Cosas Perdidas' },
+    { label: 'Deportes', value: 'Deportes' },
+    { label: 'Otros', value: 'Otros' },
+  ];
+
   useEffect(() => {
     fetchAvisos();
   }, []);
+
+  useEffect(() => {
+    filterAvisos();
+  }, [searchTerm, avisos, filter]);
+
 
   const fetchAvisos = async () => {
     try {
@@ -52,6 +77,7 @@ const AvisosScreen = () => {
       }));
 
       setAvisos(avisosList);
+      setFilteredAvisos(avisosList);
       setLastVisible(avisosSnapshot.docs[avisosSnapshot.docs.length - 1]);
     } catch (error) {
       console.error("Error al obtener avisos:", error);
@@ -90,6 +116,64 @@ const AvisosScreen = () => {
       setLoadingMore(false);
     }
   };
+
+  const filterAvisos = () => {
+    let filtered = avisos;
+
+    // Filtrar por término de búsqueda
+    if (searchTerm !== '') {
+      const termLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(aviso => {
+        const titulo = aviso.titulo?.toLowerCase() || '';
+        const contenido = aviso.contenido?.toLowerCase() || '';
+        return titulo.includes(termLower) || contenido.includes(termLower);
+      });
+    }
+
+    if (filter.category && filter.category !== 'Todas las categorias') {
+      filtered = filtered.filter(post => post.categoria === filter.category);
+    }
+
+    if (filter.date !== 'anytime') {
+      const now = new Date();
+      let dateLimit;
+
+      switch (filter.date) {
+        case 'today':
+          dateLimit = new Date(now.setDate(now.getDate() - 1));
+          break;
+        case 'thisWeek':
+          dateLimit = new Date(now.setDate(now.getDate() - 7));
+          break;
+        case 'thisMonth':
+          dateLimit = new Date(now.setMonth(now.getMonth() - 1));
+          break;
+        case 'thisYear':
+          dateLimit = new Date(now.setFullYear(now.getFullYear() - 1));
+          break;
+        default:
+          dateLimit = new Date(0);
+      }
+      filtered = filtered.filter(post => new Date(post.fecha) >= dateLimit);
+    }
+
+    setFilteredAvisos(filtered);
+  };
+
+  const resetFilters = () => {
+    setFilter({ category: 'Todas las categorias', date: 'anytime' });
+    setShowFilters(false);
+  };
+
+  const handleFilterSelect = (type, value) => {
+    setFilter({ ...filter, [type]: value });
+  };
+
+  const applyFilters = () => {
+    filterAvisos();
+    setShowFilters(false);
+  };
+
 
   const handlePress = (item) => {
     setSelectedAviso(item);
@@ -204,6 +288,29 @@ const AvisosScreen = () => {
 
   return (
     <View style={styles.container}>
+       <View style={styles.searchContainer}>
+        <FontAwesome5 name="search" size={18} color="black" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder=" Buscar..."
+          value={searchTerm}
+          onChangeText={setSearchTerm}
+        />
+        <TouchableOpacity style={styles.filterButton} onPress={() => setShowFilters(true)}>
+          <FontAwesome5 name="filter" size={18} color="black" />
+        </TouchableOpacity>
+      </View>
+
+      <FilterModal
+        visible={showFilters}
+        onClose={() => setShowFilters(false)}
+        filter={filter}
+        handleFilterSelect={handleFilterSelect}
+        resetFilters={resetFilters}
+        applyFilters={applyFilters}
+        categories={categories} // Pasa las categorías como prop
+      />
+
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#0000ff" />
@@ -214,7 +321,7 @@ const AvisosScreen = () => {
         </View>
       ) : (
         <FlatList
-          data={avisos}
+        data={filteredAvisos}
           renderItem={renderItem}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.flatlistContent}
@@ -296,6 +403,26 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  searchContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#eee',
+    borderRadius: 5,
+    margin: 10,
+    padding: 10,
+    alignItems: 'center',
+    position: 'sticky',
+    top: 0,
+    zIndex: 10,
+    bottom: 30,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  filterButton: {
+    marginLeft: 10,
+  },
+
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
