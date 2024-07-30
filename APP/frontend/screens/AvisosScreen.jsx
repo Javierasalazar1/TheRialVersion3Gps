@@ -302,6 +302,7 @@ const AvisosScreen = () => {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#143d5c" />
+        <ActivityIndicator size="large" color="#143d5c" />
         <Text style={styles.text}>Cargando avisos...</Text>
       </View>
     );
@@ -423,9 +424,13 @@ const AvisosScreen = () => {
               placeholder="Detalles adicionales"
               multiline
             />
-
-            <Button title="Enviar" onPress={handleReportSubmit} />
-            <Button title="Cancelar" onPress={() => setReportModalVisible(false)} />
+             {showReportError && (
+              <Text style={styles.errorText}>Selecciona un motivo antes de enviar el reporte.</Text>
+            )}
+            <View style={styles.reportButtonContainer}>
+              <Button title="Cancelar" color="#ef8016" onPress={() => setReportModalVisible(false)} />
+              <Button title="Reportar" color="#143d5c"onPress={handleReportSubmit} />
+            </View>
           </View>
         </View>
       </Modal>
@@ -532,6 +537,11 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
+    color: '#007BFF',
+    backgroundColor: '#ef8016',
+  },
+  selectedReportOptionText: {
+    color: '#ffff',
     marginBottom: 10,
   },
   modalText: {

@@ -144,10 +144,10 @@ const InicioScreen = ({ navigation }) => {
         </TouchableOpacity>
         {/* Animated Menu */}
         <Animated.View style={[styles.menuContainer, { height: menuHeight }]}>
-          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('CrearAviso')}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('Crear Aviso')}>
             <Text style={styles.menuText}>Avisos</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('CrearPublicacion')}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('Crear Publicacion')}>
             <Text style={styles.menuText}>Publicaciones</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('Publicar Producto')}>
@@ -263,6 +263,51 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 8,
     zIndex: 8,
+  },
+  filterModal: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  filterContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+  },
+  filterTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    marginTop: 5,
+  },
+
+  menuOptionText: {
+    fontSize: 16,
+  },
+
+  filterButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  filterButtonCancel: {
+    backgroundColor: '#ef8016',
+    padding: 10,
+    borderRadius: 5,
+  },
+  filterButtonApply: {
+    backgroundColor: '#143d5c',
+    padding: 10,
+    borderRadius: 5,
+  },
+  filterButtonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  filterPicker:{
+    fontSize: 10,
   },
   menuContainer: {
     position: 'fixed',

@@ -150,14 +150,15 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: '#143d5c',
+    backgroundColor: '#143d5c',
     padding: 10,
     marginVertical: 8,
     borderRadius: 4,
     alignItems: 'center',
-    width: '100%',
+    width: '40%',
   },
   buttonText: {
-    color: 'white',
+    color: '#ffff',
     fontWeight: 'bold',
   },
 });

@@ -130,6 +130,10 @@ const PublicacionesScreen = () => {
     }
   };
 
+  const reportReasons = [
+    "Información errónea",
+    "Otro"
+  ];
   const filterPublicaciones = () => {
     let filtered = publicaciones;
 
@@ -309,7 +313,7 @@ const PublicacionesScreen = () => {
                   key={index}
                   style={[
                     styles.reportReasonBox,
-                    selectedReason === reason && { backgroundColor: '#007BFF' }
+                    selectedReason === reason && { backgroundColor: '#ef8016' }
                   ]}
                   onPress={() => setSelectedReason(reason)}
                 >
@@ -337,7 +341,7 @@ const PublicacionesScreen = () => {
                 <Text style={styles.cancelButtonText}>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.acceptButton} onPress={handleReport}>
-                <Text style={styles.acceptButtonText}>Enviar Reporte</Text>
+                <Text style={styles.acceptButtonText}>Reportar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -491,7 +495,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   cancelButton: {
-    backgroundColor: 'red',
+    backgroundColor: '#ef8016',
     padding: 10,
     borderRadius: 10,
     alignItems: 'center',
@@ -503,7 +507,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   acceptButton: {
-    backgroundColor: '#007BFF',
+    backgroundColor: '#143d5c',
     padding: 10,
     borderRadius: 10,
     alignItems: 'center',

@@ -1,67 +1,108 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TextInput, Button, Modal, TouchableOpacity } from 'react-native';
-import { getFirestore, collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
-import Toast from 'react-native-toast-message';
+import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, Image, ScrollView, Modal } from 'react-native';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import styles from '../styles';
 
-const ReportesScreen = () => {
-  const [avisos, setAvisos] = useState([]);
+// Tu configuración de Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyDK71FGurfMwk2XbZ3UwzdC-uTHegEZkj4",
+  authDomain: "gps2024-119de.firebaseapp.com",
+  databaseURL: "https://gps2024-119de-default-rtdb.firebaseio.com",
+  projectId: "gps2024-119de",
+  storageBucket: "gps2024-119de.appspot.com",
+  messagingSenderId: "816992076661",
+  appId: "1:816992076661:web:e715cd65134c743dcc493c",
+  measurementId: "G-VXR027HFXL"
+};
+
+// Inicializa Firebase
+const app = initializeApp(firebaseConfig);
+const firestore = getFirestore(app);
+
+const ReportesScreen = ({ navigation }) => {
+  const [publicaciones, setPublicaciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedAviso, setSelectedAviso] = useState(null);
+  const [selectedPublication, setSelectedPublication] = useState(null);
+  const [reportDetail, setReportDetail] = useState(null);
 
   useEffect(() => {
-    fetchAvisosWithReports();
+    const fetchPublicaciones = async () => {
+      try {
+        // Obtener todos los reportes
+        const reportesCollection = collection(firestore, 'reports');
+        const reportesSnapshot = await getDocs(reportesCollection);
+        const reportesData = reportesSnapshot.docs.map(doc => doc.data());
+
+        // Obtener todas las publicaciones con reportes
+        const publicacionesIds = [...new Set(reportesData.map(reporte => reporte.publicationId))];
+
+        // Obtener detalles de cada publicación
+        const publicacionesPromises = publicacionesIds.map(id =>
+          getDoc(doc(firestore, 'publicaciones', id))
+        );
+
+        const publicacionesSnapshots = await Promise.all(publicacionesPromises);
+        const publicacionesData = publicacionesSnapshots.map(snapshot => ({ id: snapshot.id, ...snapshot.data() }));
+
+        setPublicaciones(publicacionesData);
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPublicaciones();
   }, []);
 
-  const fetchAvisosWithReports = async () => {
+  const handlePublicationPress = (publication) => {
+    setSelectedPublication(publication);
+  };
+
+  const handleReportDetailPress = async (publicationId) => {
     try {
-      const db = getFirestore();
-      const reportsCollection = collection(db, 'reportes');
-      const reportsQuery = query(reportsCollection);
-      const reportsSnapshot = await getDocs(reportsQuery);
+      // Obtener los reportes asociados a esta publicación
+      const reportesCollection = collection(firestore, 'reports');
+      const reportesSnapshot = await getDocs(reportesCollection);
+      const reportesData = reportesSnapshot.docs.map(doc => doc.data());
 
-      const avisoIds = new Set(
-        reportsSnapshot.docs.map(docSnapshot => docSnapshot.data().avisoId)
-      );
+      // Filtrar el reporte asociado a la publicación seleccionada
+      const reportDetail = reportesData.find(report => report.publicationId === publicationId);
 
-      const avisosPromises = Array.from(avisoIds).map(async (id) => {
-        const avisoDoc = doc(db, 'avisos', id);
-        const avisoSnapshot = await getDoc(avisoDoc);
-        if (avisoSnapshot.exists()) {
-          return { id: avisoSnapshot.id, ...avisoSnapshot.data() };
-        }
-        return null;
-      });
-
-      const avisosList = (await Promise.all(avisosPromises)).filter(aviso => aviso !== null);
-      setAvisos(avisosList);
+      setReportDetail(reportDetail);
     } catch (error) {
-      console.error("Error al obtener avisos con reportes:", error);
-      setError("Hubo un error al cargar los avisos con reportes. Por favor, intenta de nuevo más tarde.");
-    } finally {
-      setLoading(false);
+      setError(error.message);
     }
   };
 
-  const handlePress = (item) => {
-    setSelectedAviso(item);
-    setModalVisible(true);
-  };
-
   const renderItem = ({ item }) => (
-    <View style={styles.itemContainer}>
-      <TouchableOpacity onPress={() => handlePress(item)} style={styles.item}>
-        <Text style={styles.title}>{item.titulo}</Text>
-      </TouchableOpacity>
+    <View style={styles.item}>
+      {item.imagen ? (
+        <Image source={{ uri: item.imagen }} style={styles.image} />
+      ) : null}
+      <Text style={styles.title}>{item.nombre}</Text>
+      <Text style={styles.detail}>{item.detalle}</Text>
+      <Text style={styles.category}>{item.categoria}</Text>
+      <Text style={styles.date}>{item.fecha}</Text>
+      <Text style={styles.username}>Publicado por: {item.username}</Text>
+      <Text style={styles.likes}>Likes: {item.like}</Text>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity onPress={() => handlePublicationPress(item)} style={styles.detailButton}>
+          <Text style={styles.detailButtonText}>Detalle de Publicación</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => handleReportDetailPress(item.id)} style={styles.detailButton}>
+          <Text style={styles.detailButtonText}>Detalle del Reporte</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
-        <Text style={styles.text}>Cargando avisos con reportes...</Text>
+        <ActivityIndicator size="large" color="#143d5c" />
       </View>
     );
   }
@@ -69,7 +110,7 @@ const ReportesScreen = () => {
   if (error) {
     return (
       <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>{error}</Text>
+        <Text style={styles.errorText}>Error: {error}</Text>
       </View>
     );
   }
@@ -77,109 +118,52 @@ const ReportesScreen = () => {
   return (
     <View style={styles.container}>
       <FlatList
-        data={avisos}
+        data={publicaciones}
         renderItem={renderItem}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.id}
         contentContainerStyle={styles.flatlistContent}
       />
-      {selectedAviso && (
+      {selectedPublication && (
         <Modal
-          animationType="slide"
           transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}
+          visible={!!selectedPublication}
+          onRequestClose={() => setSelectedPublication(null)}
         >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              {selectedAviso.imagen ? (
-                <Image source={{ uri: selectedAviso.imagen }} style={styles.modalImage} />
-              ) : null}
-              <Text style={styles.modalTitle}>{selectedAviso.titulo}</Text>
-              <Text style={styles.modalDetail}>{selectedAviso.contenido}</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
+          <View style={styles.modalOverlay}>
+            <ScrollView contentContainerStyle={styles.modalContainer}>
+              <Text style={styles.modalTitle}>Detalles de la Publicación</Text>
+              <Text style={styles.modalText}>Nombre: {selectedPublication.nombre}</Text>
+              <Text style={styles.modalText}>Detalle: {selectedPublication.detalle}</Text>
+              <Text style={styles.modalText}>Categoría: {selectedPublication.categoria}</Text>
+              <Text style={styles.modalText}>Fecha: {selectedPublication.fecha}</Text>
+              <Text style={styles.modalText}>Likes: {selectedPublication.like}</Text>
+              <TouchableOpacity onPress={() => setSelectedPublication(null)} style={styles.closeButton}>
                 <Text style={styles.closeButtonText}>Cerrar</Text>
               </TouchableOpacity>
-            </View>
+            </ScrollView>
           </View>
         </Modal>
       )}
-      <Toast ref={(ref) => Toast.setRef(ref)} />
+      {reportDetail && (
+        <Modal
+          transparent={true}
+          visible={!!reportDetail}
+          onRequestClose={() => setReportDetail(null)}
+        >
+          <View style={styles.modalOverlay}>
+            <ScrollView contentContainerStyle={styles.modalContainer}>
+              <Text style={styles.modalTitle}>Detalles del Reporte</Text>
+              <Text style={styles.modalText}>Razón: {reportDetail.reason}</Text>
+              <Text style={styles.modalText}>Información Adicional: {reportDetail.additionalInfo}</Text>
+              <TouchableOpacity onPress={() => setReportDetail(null)} style={styles.closeButton}>
+                <Text style={styles.closeButtonText}>Cerrar</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 10,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  itemContainer: {
-    marginBottom: 10,
-    backgroundColor: '#f9f9f9',
-    padding: 10,
-    borderRadius: 5,
-  },
-  item: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 10,
-    width: '80%',
-    alignItems: 'center',
-  },
-  modalImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 10,
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginVertical: 10,
-  },
-  modalDetail: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginVertical: 10,
-  },
-  closeButton: {
-    marginTop: 20,
-  },
-  closeButtonText: {
-    fontSize: 18,
-    color: '#007BFF',
-  },
-  errorText: {
-    fontSize: 18,
-    color: 'red',
-    textAlign: 'center',
-    marginTop: 10,
-  },
-  text: {
-    fontSize: 18,
-  },
-});
 
 export default ReportesScreen;
