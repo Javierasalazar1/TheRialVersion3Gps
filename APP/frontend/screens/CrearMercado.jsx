@@ -190,14 +190,16 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     alignItems: 'center',
     padding: 20,
+     backgroundColor: '#c9ced1',
   },
   imagePicker: {
     width: '100%',
     height: 200,
-    backgroundColor: '#eee',
+    backgroundColor: '#fcfeff',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
+    borderRadius: 5,
   },
   image: {
     width: '100%',
@@ -214,12 +216,13 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 10,
     marginBottom: 20,
+    backgroundColor: '#fcfeff',
   },
   disabledInput: {
     backgroundColor: '#f0f0f0',
   },
   uploadButton: {
-    backgroundColor: '#6a1b9a',
+    backgroundColor: '#143d5c',
     paddingVertical: 12,
     paddingHorizontal: 30,
     borderRadius: 25,
