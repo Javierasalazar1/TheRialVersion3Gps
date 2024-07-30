@@ -1,15 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image, TextInput, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Image, TextInput, ScrollView, Picker } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { uploadFileToStorage } from '../firebasestorage'; // Asegúrate de que esta función esté correctamente implementada
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+const categories = [
+  { label: 'Tareas', value: 'Tareas' },
+  { label: 'Apuntes', value: 'Apuntes' },
+  { label: 'Eventos', value: 'Eventos' },
+  { label: 'Servicios', value: 'Servicios' },
+  { label: 'Anuncios', value: 'Anuncios' },
+  { label: 'Cosas Perdidas', value: 'Cosas Perdidas' },
+  { label: 'Deportes', value: 'Deportes' },
+  { label: 'Otros', value: 'Otros' },
+];
+
 const CrearAvisoScreen = () => {
   const [image, setImage] = useState(null);
   const [titulo, setTitulo] = useState('');
   const [contenido, setContenido] = useState('');
+  const [categoria, setCategoria] = useState(categories[0].value);
   const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [username, setUsername] = useState('');
@@ -86,6 +98,7 @@ const CrearAvisoScreen = () => {
       const docRef = await addDoc(collection(db, 'avisos'), {
         titulo,
         contenido,
+        categoria,
         fecha: new Date().toISOString(),
         imagen: imageUrl,
         userId: currentUser.uid,
@@ -97,6 +110,7 @@ const CrearAvisoScreen = () => {
       setImage(null);
       setTitulo('');
       setContenido('');
+      setCategoria(categories[0].value);
       setLoading(false);
       alert('Aviso subido con éxito!');
     } catch (error) {
@@ -128,6 +142,16 @@ const CrearAvisoScreen = () => {
         onChangeText={setContenido}
         multiline
       />
+      <Text style={styles.label}>Seleccionar categoría:</Text>
+      <Picker
+        selectedValue={categoria}
+        style={styles.input}
+        onValueChange={(itemValue) => setCategoria(itemValue)}
+      >
+        {categories.map((category) => (
+          <Picker.Item key={category.value} label={category.label} value={category.value} />
+        ))}
+      </Picker>
       <TouchableOpacity style={styles.uploadButton} onPress={handleUpload} disabled={loading}>
         <Text style={styles.uploadButtonText}>Subir Aviso</Text>
       </TouchableOpacity>
@@ -164,6 +188,12 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 10,
     marginBottom: 20,
+  },
+  label: {
+    alignSelf: 'flex-start',
+    fontSize: 16,
+    color: '#000',
+    marginBottom: 10,
   },
   uploadButton: {
     backgroundColor: '#6a1b9a',
