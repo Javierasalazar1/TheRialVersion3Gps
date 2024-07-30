@@ -3,11 +3,14 @@ import { View, Text, StyleSheet, FlatList, Image, ActivityIndicator, TouchableOp
 import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs, getDoc, doc, addDoc } from 'firebase/firestore';
 import Toast from 'react-native-toast-message';
 import { Ionicons } from '@expo/vector-icons';
+import { FontAwesome5 } from '@expo/vector-icons';
+import FilterModal from './componentes/ModalFiltro';
 
 const PAGE_SIZE = 10;
 
 const PublicacionesScreen = () => {
   const [publicaciones, setPublicaciones] = useState([]);
+  const [filteredPublicaciones, setFilteredPublicaciones] = useState([]);
   const [lastVisible, setLastVisible] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -16,11 +19,34 @@ const PublicacionesScreen = () => {
   const [selectedReason, setSelectedReason] = useState('');
   const [additionalInfo, setAdditionalInfo] = useState('');
   const [selectedPublication, setSelectedPublication] = useState(null);
-  const [showReportError, setShowReportError] = useState(false); // Nuevo estado para mostrar el error
+  const [showReportError, setShowReportError] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filter, setFilter] = useState({ category: 'Todas las categorias', date: 'anytime' });
+
+  const reportReasons = [
+    "Contenido inapropiado",
+    "Spam",
+    "Fraude",
+    "Incitación al odio",
+    "Información falsa",
+    "Contenido sexual",
+    "Acoso",
+    "Otro"
+  ];
+
+  const categories = [
+    { label: 'Noticias', value: 'Noticias' },
+    { label: 'Otros', value: 'otros' }
+  ];
 
   useEffect(() => {
     fetchPublicaciones();
   }, []);
+
+  useEffect(() => {
+    filterPublicaciones();
+  }, [searchTerm, publicaciones, filter]);
 
   const fetchPublicaciones = async () => {
     try {
@@ -31,34 +57,15 @@ const PublicacionesScreen = () => {
 
       const publicacionesList = await Promise.all(publicacionesSnapshot.docs.map(async (docSnapshot) => {
         const data = docSnapshot.data();
-        if (!data.userId) {
-          console.warn(`La publicación ${docSnapshot.id} no tiene userId`);
-          return {
-            id: docSnapshot.id,
-            ...data,
-            userEmail: 'Usuario desconocido'
-          };
-        }
-        try {
-          const userDocRef = doc(db, 'users', data.userId);
-          const userDocSnapshot = await getDoc(userDocRef);
-          const userData = userDocSnapshot.data();
-          return {
-            id: docSnapshot.id,
-            ...data,
-            userEmail: userData ? userData.email : 'Usuario desconocido'
-          };
-        } catch (userError) {
-          console.error(`Error al obtener datos del usuario para la publicación ${docSnapshot.id}:`, userError);
-          return {
-            id: docSnapshot.id,
-            ...data,
-            userEmail: 'Error al obtener usuario'
-          };
-        }
+        return {
+          id: docSnapshot.id,
+          ...data,
+          userName: data.username || 'Usuario desconocido',
+        };
       }));
 
       setPublicaciones(publicacionesList);
+      setFilteredPublicaciones(publicacionesList);
       setLastVisible(publicacionesSnapshot.docs[publicacionesSnapshot.docs.length - 1]);
     } catch (error) {
       console.error("Error al obtener publicaciones:", error);
@@ -113,6 +120,7 @@ const PublicacionesScreen = () => {
       }));
 
       setPublicaciones(prevPublicaciones => [...prevPublicaciones, ...publicacionesList]);
+      setFilteredPublicaciones(prevPublicaciones => [...prevPublicaciones, ...publicacionesList]);
       setLastVisible(publicacionesSnapshot.docs[publicacionesSnapshot.docs.length - 1]);
     } catch (error) {
       console.error("Error al obtener más publicaciones:", error);
@@ -126,10 +134,66 @@ const PublicacionesScreen = () => {
     "Información errónea",
     "Otro"
   ];
+  const filterPublicaciones = () => {
+    let filtered = publicaciones;
+
+    if (searchTerm !== '') {
+      const termLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(pub => {
+        const title = pub.nombre?.toLowerCase() || '';
+        const detail = pub.detalle?.toLowerCase() || '';
+        return title.includes(termLower) || detail.includes(termLower);
+      });
+    }
+
+    if (filter.category && filter.category !== 'Todas las categorias') {
+      filtered = filtered.filter(pub => pub.categoria === filter.category);
+    }
+
+    if (filter.date !== 'anytime') {
+      const now = new Date();
+      let dateLimit;
+
+      switch (filter.date) {
+        case 'today':
+          dateLimit = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+          break;
+        case 'thisWeek':
+          dateLimit = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+          break;
+        case 'thisMonth':
+          dateLimit = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+          break;
+        case 'thisYear':
+          dateLimit = new Date(now.getTime() - (365 * 24 * 60 * 60 * 1000));
+          break;
+        default:
+          dateLimit = new Date(0);
+      }
+
+      filtered = filtered.filter(pub => new Date(pub.fecha) >= dateLimit);
+    }
+
+    setFilteredPublicaciones(filtered);
+  };
+
+  const resetFilters = () => {
+    setFilter({ category: 'Todas las categorias', date: 'anytime' });
+    setShowFilters(false);
+  };
+
+  const handleFilterSelect = (type, value) => {
+    setFilter({ ...filter, [type]: value });
+  };
+
+  const applyFilters = () => {
+    filterPublicaciones();
+    setShowFilters(false);
+  };
 
   const handleReport = async () => {
     if (!selectedReason) {
-      setShowReportError(true); // Mostrar mensaje de error si no se ha seleccionado un motivo
+      setShowReportError(true);
       return;
     }
 
@@ -168,11 +232,12 @@ const PublicacionesScreen = () => {
     <View style={styles.item}>
       <View style={styles.itemContent}>
         <View style={styles.itemText}>
-          <Text style={styles.userEmail}>{item.userEmail}</Text>
-          {item.imagen ? <Image source={{ uri: item.imagen }} style={styles.image} onError={(e) => console.log('Error al cargar la imagen:', e.nativeEvent.error)} /> : null}
+          <Text style={styles.userName}> {item.userName}</Text>
+          {item.imagen && <Image source={{ uri: item.imagen }} style={styles.image} onError={(e) => console.log('Error al cargar la imagen:', e.nativeEvent.error)} />}
           <Text style={styles.title}>{item.nombre}</Text>
           <Text style={styles.detail}>{item.detalle}</Text>
           <Text style={styles.category}>{item.categoria}</Text>
+          <Text style={styles.date}>{item.fecha}</Text>
         </View>
         <TouchableOpacity onPress={() => openReportModal(item.id)} style={styles.flagIcon}>
           <Ionicons name="flag-outline" size={24} color="red" />
@@ -200,8 +265,31 @@ const PublicacionesScreen = () => {
 
   return (
     <View style={styles.container}>
+      <View style={styles.searchContainer}>
+        <FontAwesome5 name="search" size={18} color="black" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder=" Buscar..."
+          value={searchTerm}
+          onChangeText={setSearchTerm}
+        />
+        <TouchableOpacity style={styles.filterButton} onPress={() => setShowFilters(true)}>
+          <FontAwesome5 name="filter" size={18} color="black" />
+        </TouchableOpacity>
+      </View>
+
+      <FilterModal
+        visible={showFilters}
+        onClose={() => setShowFilters(false)}
+        filter={filter}
+        handleFilterSelect={handleFilterSelect}
+        resetFilters={resetFilters}
+        applyFilters={applyFilters}
+        categories={categories} // Pasa las categorías como prop
+      />
+
       <FlatList
-        data={publicaciones}
+        data={filteredPublicaciones}
         renderItem={renderItem}
         keyExtractor={item => item.id}
         onEndReached={fetchMorePublicaciones}
@@ -209,6 +297,7 @@ const PublicacionesScreen = () => {
         ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#143d5c" />}
         contentContainerStyle={styles.flatlistContent}
       />
+
       <Modal
         visible={modalVisible}
         transparent={true}
@@ -244,7 +333,7 @@ const PublicacionesScreen = () => {
               value={additionalInfo}
               onChangeText={setAdditionalInfo}
             />
-{showReportError && (
+            {showReportError && (
               <Text style={styles.errorText}>Selecciona un motivo antes de enviar el reporte.</Text>
             )}
             <View style={styles.buttonContainer}>
@@ -268,6 +357,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     paddingHorizontal: 20,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#eee',
+    borderRadius: 5,
+    margin: 10,
+    padding: 10,
+    alignItems: 'center',
+    position: 'sticky',
+    top: 0,
+    zIndex: 10,
+    bottom: 30,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  filterButton: {
+    marginLeft: 10,
   },
   loadingContainer: {
     flex: 1,
@@ -332,7 +440,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   flatlistContent: {
-    paddingBottom: 50, // Ajusta este valor según el tamaño de tu barra de navegación en InicioScreen
+    paddingBottom: 50,
   },
   flagIcon: {
     alignSelf: 'flex-end',
@@ -378,7 +486,7 @@ const styles = StyleSheet.create({
     padding: 10,
     marginVertical: 10,
     height: 100,
-    width: '80%', // Ajusta el ancho según tus necesidades
+    width: '80%',
     textAlignVertical: 'top',
   },
   buttonContainer: {
