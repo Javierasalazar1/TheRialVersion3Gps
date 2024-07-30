@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, ActivityIndicator, TextInput, Button, Image, Alert } from 'react-native';
 import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
@@ -27,14 +25,12 @@ const AvisosScreen = () => {
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
   const [dropdownMenuVisible, setDropdownMenuVisible] = useState(false);
+  
   //mis filtros
   const [filteredAvisos, setFilteredAvisos] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false); // Estado para mostrar el modal de filtros
   const [filter, setFilter] = useState({category: 'Todas las categorias', date: 'anytime' }); // Estado de los filtros
-
-
-
 
   const reportReasons = [
     "Contenido inapropiado",
@@ -47,14 +43,13 @@ const AvisosScreen = () => {
     "Otro"
   ];
 
-   // Define las categorías aquí
-   const categories = [
+  // Define las categorías aquí
+  const categories = [
     { label: 'Perdida de objeto', value: 'Perdida de objeto' },
     { label: 'Juegos', value: 'juegos' },
     { label: 'Búsqueda', value: 'busqueda' },
     { label: 'queque', value: 'queque' }
   ];
-
 
   useEffect(() => {
     fetchAvisos();
@@ -62,9 +57,7 @@ const AvisosScreen = () => {
 
   useEffect(() => {
     filterAvisos();
-  }, [searchTerm, avisos]);
-
-
+  }, [searchTerm, avisos, filter]);
 
   const fetchAvisos = async () => {
     try {
@@ -88,36 +81,63 @@ const AvisosScreen = () => {
       setLoading(false);
     }
   };
-//Mis filtros
+
   const filterAvisos = () => {
-    if (searchTerm === '') {
-      setFilteredAvisos(avisos);
-    } else {
+    let filtered = avisos;
+
+    // Filtrar por término de búsqueda
+    if (searchTerm !== '') {
       const termLower = searchTerm.toLowerCase();
-      const filtered = avisos.filter(aviso => {
+      filtered = filtered.filter(aviso => {
         const titulo = aviso.titulo?.toLowerCase() || '';
         const contenido = aviso.contenido?.toLowerCase() || '';
         return titulo.includes(termLower) || contenido.includes(termLower);
       });
-      setFilteredAvisos(filtered);
     }
+
+    if (filter.category && filter.category !== 'Todas las categorias') {
+      filtered = filtered.filter(post => post.categoria === filter.category);
+    }
+
+    if (filter.date !== 'anytime') {
+      const now = new Date();
+      let dateLimit;
+
+      switch (filter.date) {
+        case 'today':
+          dateLimit = new Date(now.setDate(now.getDate() - 1));
+          break;
+        case 'thisWeek':
+          dateLimit = new Date(now.setDate(now.getDate() - 7));
+          break;
+        case 'thisMonth':
+          dateLimit = new Date(now.setMonth(now.getMonth() - 1));
+          break;
+        case 'thisYear':
+          dateLimit = new Date(now.setFullYear(now.getFullYear() - 1));
+          break;
+        default:
+          dateLimit = new Date(0);
+      }
+      filtered = filtered.filter(post => new Date(post.fecha) >= dateLimit);
+    }
+
+    setFilteredAvisos(filtered);
   };
 
   const resetFilters = () => {
-    setFilter({category: 'Todas las categorias', date: 'anytime' });
+    setFilter({ category: 'Todas las categorias', date: 'anytime' });
     setShowFilters(false);
-    };
+  };
 
   const handleFilterSelect = (type, value) => {
     setFilter({ ...filter, [type]: value });
   };
+
   const applyFilters = () => {
-    // Implementa tu lógica de filtros aquí
+    filterAvisos();
     setShowFilters(false);
   };
-
-//hasta aqui
-
 
   const fetchMoreAvisos = async () => {
     if (!lastVisible || loadingMore) return;
@@ -177,7 +197,7 @@ const AvisosScreen = () => {
         avisoId: selectedAviso.id,
       });
 
-     setReportModalVisible(false); // Cerrar el modal primero
+      setReportModalVisible(false); // Cerrar el modal primero
 
       Toast.show({
         type: 'success',
@@ -297,17 +317,17 @@ const AvisosScreen = () => {
 
   return (
     <View style={styles.container}>
-        <View style={styles.searchContainer}>
-       <FontAwesome5 name="search" size={18} color="black" />
-      <TextInput
-        style={styles.searchInput}
-        placeholder=" Buscar..."
-        value={searchTerm}
-        onChangeText={setSearchTerm}
-      />
-       <TouchableOpacity style={styles.filterButton} onPress={() => setShowFilters(true)}>
-            <FontAwesome5 name="filter" size={18} color="black" />
-          </TouchableOpacity>
+      <View style={styles.searchContainer}>
+        <FontAwesome5 name="search" size={18} color="black" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder=" Buscar..."
+          value={searchTerm}
+          onChangeText={setSearchTerm}
+        />
+        <TouchableOpacity style={styles.filterButton} onPress={() => setShowFilters(true)}>
+          <FontAwesome5 name="filter" size={18} color="black" />
+        </TouchableOpacity>
       </View>
       
       <FilterModal
@@ -383,7 +403,6 @@ const AvisosScreen = () => {
         visible={reportModalVisible}
         onRequestClose={() => setReportModalVisible(false)}
       >
-
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Reportar Aviso</Text>
@@ -396,7 +415,6 @@ const AvisosScreen = () => {
             {showReportError && !reportReason && (
               <Text style={styles.errorText}>Por favor, selecciona una razón para el reporte.</Text>
             )}
-
 
             <TextInput
               style={styles.input}
@@ -419,7 +437,6 @@ const AvisosScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-
     backgroundColor: '#fff',
   },
   searchContainer: {
@@ -441,8 +458,6 @@ const styles = StyleSheet.create({
   filterButton: {
     marginLeft: 10,
   },
-
-
   itemContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -484,7 +499,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',

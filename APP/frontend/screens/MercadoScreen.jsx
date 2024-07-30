@@ -10,7 +10,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FontAwesome5 } from '@expo/vector-icons';
 import ModalFiltro from './componentes/ModalFiltro';
 
-
 const PAGE_SIZE = 10;
 
 const reportReasons = [
@@ -24,8 +23,7 @@ const reportReasons = [
   "Otro"
 ];
 
- // Define las categorías aquí
- const categories = [
+const categories = [
   { label: 'Libros y Materiales de Estudio', value: 'Libros y Materiales de Estudio' },
   { label: 'Electrónica y Accesorios', value: 'Electrónica y Accesorios' },
   { label: 'Ropa y Accesorios', value: 'Ropa y Accesorios' },
@@ -62,8 +60,8 @@ const MercadoScreen = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [imageDeleted, setImageDeleted] = useState(false);
   const [searchText, setSearchText] = useState('');
-  const [showFiltters, setShowFiltters] = useState(false); // Estado para mostrar el modal de filtros
-  const [filtter, setFiltter] = useState({category: 'Todas las categorias', date: 'anytime' }); // Estado de los filtros
+  const [showFilters, setShowFilters] = useState(false);
+  const [filter, setFilter] = useState({ category: 'Todas las categorias', date: 'anytime' });
 
   useEffect(() => {
     fetchPublicaciones();
@@ -72,19 +70,7 @@ const MercadoScreen = () => {
 
   useEffect(() => {
     filterPublicaciones();
-  }, [searchText, publicaciones]); 
-
-  const resetFilters = () => {
-    setFiltter({category: 'Todas las categorias', date: 'anytime' });
-    setShowFiltters(false);
-    };
-    const handleFilterSelect = (type, value) => {
-      setFiltter({ ...filter, [type]: value });
-    };
-    const applyFilters = () => {
-      // Implementa tu lógica de filtros aquí
-      setShowFiltters(false);
-    };
+  }, [searchText, publicaciones, filter]);
 
   const fetchUsername = async () => {
     try {
@@ -106,13 +92,10 @@ const MercadoScreen = () => {
 
       const publicacionesList = publicacionesSnapshot.docs.map(docSnapshot => {
         const data = docSnapshot.data();
-        const fecha = data.fecha
-          ? formatFecha(new Date(data.fecha))
-          : 'Fecha desconocida';
         return {
           id: docSnapshot.id,
           ...data,
-          fecha,
+          fecha: data.fecha,
           nombre: data.nombre || 'Usuario desconocido',
         };
       });
@@ -145,13 +128,10 @@ const MercadoScreen = () => {
 
       const publicacionesList = publicacionesSnapshot.docs.map(docSnapshot => {
         const data = docSnapshot.data();
-        const fecha = data.fecha
-          ? formatFecha(new Date(data.fecha))
-          : 'Fecha desconocida';
         return {
           id: docSnapshot.id,
           ...data,
-          fecha,
+          fecha: data.fecha,
           nombre: data.nombre || 'Usuario desconocido',
         };
       });
@@ -312,14 +292,61 @@ const MercadoScreen = () => {
   };
 
   const filterPublicaciones = () => {
-    const filtered = publicaciones.filter(post =>
-      post.nombre.toLowerCase().includes(searchText.toLowerCase()) ||
-      post.detalle.toLowerCase().includes(searchText.toLowerCase())
-    );
+    let filtered = publicaciones;
+
+    if (searchText !== '') {
+      const termLower = searchText.toLowerCase();
+      filtered = filtered.filter(post => {
+        const nombre = post.nombre?.toLowerCase() || '';
+        const detalle = post.detalle?.toLowerCase() || '';
+        return nombre.includes(termLower) || detalle.includes(termLower);
+      });
+    }
+
+    if (filter.category && filter.category !== 'Todas las categorias') {
+      filtered = filtered.filter(post => post.categoria === filter.category);
+    }
+
+    if (filter.date !== 'anytime') {
+      const now = new Date();
+      let dateLimit;
+
+      switch (filter.date) {
+        case 'today':
+          dateLimit = new Date(now.setDate(now.getDate() - 1));
+          break;
+        case 'thisWeek':
+          dateLimit = new Date(now.setDate(now.getDate() - 7));
+          break;
+        case 'thisMonth':
+          dateLimit = new Date(now.setMonth(now.getMonth() - 1));
+          break;
+        case 'thisYear':
+          dateLimit = new Date(now.setFullYear(now.getFullYear() - 1));
+          break;
+        default:
+          dateLimit = new Date(0);
+      }
+
+      filtered = filtered.filter(post => new Date(post.fecha) >= dateLimit);
+    }
+
     setFilteredPublicaciones(filtered);
   };
 
+  const resetFilters = () => {
+    setFilter({ category: 'Todas las categorias', date: 'anytime' });
+    setShowFilters(false);
+  };
 
+  const handleFilterSelect = (type, value) => {
+    setFilter({ ...filter, [type]: value });
+  };
+
+  const applyFilters = () => {
+    filterPublicaciones();
+    setShowFilters(false);
+  };
 
   const renderItem = ({ item }) => (
     <View style={styles.item}>
@@ -328,7 +355,7 @@ const MercadoScreen = () => {
         <View style={styles.headerRight}>
           <TouchableOpacity onPress={() => handleReportItem(item.id)}>
             <Ionicons name="flag-outline" size={24} color="red" style={styles.reportIcon} />
-           </TouchableOpacity>
+          </TouchableOpacity>
 
           <TouchableOpacity onPress={() => handleOpenOptions(item.id)}>
             <Ionicons name="ellipsis-vertical" size={24} color="black" />
@@ -342,7 +369,7 @@ const MercadoScreen = () => {
       <Text style={styles.detalle}>{item.detalle}</Text>
       <View style={styles.footer}>
         <Text style={styles.precio}>${item.precio}</Text>
-        <Text style={styles.fecha}>{item.fecha}</Text>
+        <Text style={styles.fecha}>{formatFecha(new Date(item.fecha))}</Text>
       </View>
     </View>
   );
@@ -370,30 +397,28 @@ const MercadoScreen = () => {
 
   return (
     <MenuProvider>
-
-     <View style={styles.searchContaine}>
-       <FontAwesome5 name="search" size={18} color="black" />
-      <TextInput
-        style={styles.searchInpu}
-        placeholder=" Buscar..."
-        value={searchText}
-        onChangeText={text => setSearchText(text)}
-      />
-       <TouchableOpacity style={styles.filterButton} onPress={() => setShowFiltters(true)}>
-            <FontAwesome5 name="filter" size={18} color="black" />
-          </TouchableOpacity>
+      <View style={styles.searchContainer}>
+        <FontAwesome5 name="search" size={18} color="black" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Buscar..."
+          value={searchText}
+          onChangeText={setSearchText}
+        />
+        <TouchableOpacity style={styles.filterButton} onPress={() => setShowFilters(true)}>
+          <FontAwesome5 name="filter" size={18} color="black" />
+        </TouchableOpacity>
       </View>
       
       <ModalFiltro
-        visible={showFiltters}
-        onClose={() => setShowFiltters(false)}
-        filter={filtter}
+        visible={showFilters}
+        onClose={resetFilters}
+        filter={filter}
         handleFilterSelect={handleFilterSelect}
         resetFilters={resetFilters}
         applyFilters={applyFilters}
-        categories={categories} // Pasa las categorías como prop
+        categories={categories}
       />
-
 
       <FlatList
         data={filteredPublicaciones}
@@ -559,7 +584,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 10,
   },
-  searchContaine: {
+  searchContainer: {
     flexDirection: 'row',
     backgroundColor: '#eee',
     borderRadius: 5,
@@ -571,11 +596,8 @@ const styles = StyleSheet.create({
     zIndex: 10,
     bottom: 30,
   },
-  searchInpu: {
+  searchInput: {
     flex: 1,
-    marginLeft: 10,
-  },
-  filterButto: {
     marginLeft: 10,
   },
   filterButton: {
@@ -629,7 +651,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'right',
     marginBottom: 5,
-    
   },
   loadingContainer: {
     flex: 1,
