@@ -144,10 +144,10 @@ const InicioScreen = ({ navigation }) => {
         </TouchableOpacity>
         {/* Animated Menu */}
         <Animated.View style={[styles.menuContainer, { height: menuHeight }]}>
-          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('CrearAviso')}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('Crear Aviso')}>
             <Text style={styles.menuText}>Avisos</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('CrearPublicacion')}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('Crear Publicacion')}>
             <Text style={styles.menuText}>Publicaciones</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('Publicar Producto')}>
