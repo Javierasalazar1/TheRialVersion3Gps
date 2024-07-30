@@ -27,12 +27,12 @@ const LoginScreen = ({ navigation }) => {
         setErrorMessage('Por favor, ingresa el correo y la contraseña.');
         return;
       }
-  
+
       const response = await axios.post('http://localhost:4000/api/auth/signin', {
         email,
         password
       });
-  
+
       if (response.status === 200 && response.data.token) {
         // Almacenar el token en AsyncStorage
         await AsyncStorage.setItem('token', response.data.token);
@@ -40,8 +40,7 @@ const LoginScreen = ({ navigation }) => {
           // Almacenar los usuaerios en AsyncStorage
           await AsyncStorage.setItem('username',response.data.username);
         // Almacenar los roles en AsyncStorage
-        await AsyncStorage.setItem('roles', response.data.roles); 
-      
+        await AsyncStorage.setItem('roles', response.data.roles);
 
         setErrorMessage('');
 
@@ -55,7 +54,7 @@ const LoginScreen = ({ navigation }) => {
       setErrorMessage('Error al iniciar sesión. Por favor, inténtalo de nuevo.');
     }
   };
-  
+
 
   return (
     <View style={styles.container}>
@@ -105,10 +104,10 @@ const App = () => {
           <Stack.Navigator>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Inicio" component={InicioScreen} />
-            <Stack.Screen name="CrearPublicacion" component={CrearPublicacionScreen} />
-            <Stack.Screen name="CrearAviso" component={CrearAvisoScreen} />
+            <Stack.Screen name="Crear Publicacion" component={CrearPublicacionScreen} />
+            <Stack.Screen name="Crear Aviso" component={CrearAvisoScreen} />
             <Stack.Screen name="Perfil" component={PerfilScreen} />
-            <Stack.Screen name="CrearMercado" component={CrearMercado} />
+            <Stack.Screen name="Publicar Producto" component={CrearMercado} />
             <Stack.Screen name="Moderación" component={ModeracionScreen} />
             <Stack.Screen name="Reportes" component={ReportesScreen} />
           </Stack.Navigator>
@@ -150,6 +149,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   button: {
+    backgroundColor: '#143d5c',
     backgroundColor: '#143d5c',
     padding: 10,
     marginVertical: 8,

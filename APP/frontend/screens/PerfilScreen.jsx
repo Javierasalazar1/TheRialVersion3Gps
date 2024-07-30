@@ -106,7 +106,7 @@ const PerfilScreen = () => {
   if (initializing) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#6a1b9a" />
+        <ActivityIndicator size="large" color="#143d5c" />
       </View>
     );
   }
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   updateButton: {
-    backgroundColor: '#6a1b9a',
+    backgroundColor: '#143d5c',
     paddingVertical: 12,
     paddingHorizontal: 30,
     borderRadius: 25,
