@@ -356,7 +356,6 @@ const MercadoScreen = () => {
           <TouchableOpacity onPress={() => handleReportItem(item.id)}>
             <Ionicons name="flag-outline" size={24} color="red" style={styles.reportIcon} />
           </TouchableOpacity>
-
           <TouchableOpacity onPress={() => handleOpenOptions(item.id)}>
             <Ionicons name="ellipsis-vertical" size={24} color="black" />
           </TouchableOpacity>
