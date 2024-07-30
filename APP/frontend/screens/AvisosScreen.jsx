@@ -129,7 +129,7 @@ const AvisosScreen = () => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#143d5c" />
         <Text style={styles.text}>Cargando avisos...</Text>
       </View>
     );
@@ -151,7 +151,7 @@ const AvisosScreen = () => {
         keyExtractor={item => item.id}
         onEndReached={fetchMoreAvisos}
         onEndReachedThreshold={0.5}
-        ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#0000ff" />}
+        ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#143d5c" />}
         contentContainerStyle={styles.flatlistContent}
       />
       {selectedAviso && (
@@ -217,8 +217,8 @@ const AvisosScreen = () => {
               <Text style={styles.errorText}>Selecciona un motivo antes de enviar el reporte.</Text>
             )}
             <View style={styles.reportButtonContainer}>
-              <Button title="Cancelar" color="red" onPress={() => setReportModalVisible(false)} />
-              <Button title="Enviar" onPress={handleReportSubmit} />
+              <Button title="Cancelar" color="#ef8016" onPress={() => setReportModalVisible(false)} />
+              <Button title="Reportar" color="#143d5c"onPress={handleReportSubmit} />
             </View>
           </View>
         </View>
@@ -333,10 +333,10 @@ const styles = StyleSheet.create({
   selectedReportOption: {
     fontWeight: 'bold',
     color: '#007BFF',
-    backgroundColor: '#e0e0e0',
+    backgroundColor: '#ef8016',
   },
   selectedReportOptionText: {
-    color: '#007BFF',
+    color: '#ffff',
   },
   reportInput: {
     borderColor: '#ccc',

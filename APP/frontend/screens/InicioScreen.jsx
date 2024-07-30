@@ -196,13 +196,13 @@ const InicioScreen = ({ navigation }) => {
 
         {/* Animated Menu */}
         <Animated.View style={[styles.menuContainer, { height: menuHeight }]}>
-          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('CrearAviso')}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('Crear Aviso')}>
             <Text style={styles.menuText}>Avisos</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('CrearPublicacion')}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('Crear Publicacion')}>
             <Text style={styles.menuText}>Publicaciones</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('CrearMercado')}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('Publicar Producto')}>
             <Text style={styles.menuText}>Market</Text>
           </TouchableOpacity>
         </Animated.View>
@@ -265,13 +265,13 @@ const InicioScreen = ({ navigation }) => {
         {/* Footer */}
         <View style={styles.footer}>
           <TouchableOpacity onPress={() => setSelectedScreen('Avisos')}>
-            <FontAwesome5 name="bullhorn" size={24} color={selectedScreen === 'Avisos' ? 'tomato' : 'black'} />
+            <FontAwesome5 name="bullhorn" size={24} color={selectedScreen === 'Avisos' ? '#0a77bb' : 'black'} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setSelectedScreen('Publicaciones')}>
-            <FontAwesome5 name="home" size={24} color={selectedScreen === 'Publicaciones' ? 'tomato' : 'black'} />
+            <FontAwesome5 name="home" size={24} color={selectedScreen === 'Publicaciones' ? '#0a77bb' : 'black'} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setSelectedScreen('Mercado')}>
-            <FontAwesome5 name="shopping-cart" size={24} color={selectedScreen === 'Mercado' ? 'tomato' : 'black'} />
+            <FontAwesome5 name="shopping-cart" size={24} color={selectedScreen === 'Mercado' ? '"#0a77bb"' : 'black'} />
           </TouchableOpacity>
         </View>
       </View>
@@ -295,10 +295,10 @@ const optionsStyles = {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#cfd9df',
   },
   header: {
-    backgroundColor: '#6a1b9a',
+    backgroundColor: '#143d5c',
     paddingTop: 10,
     paddingBottom: 10,
     paddingHorizontal: 20,
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
     position: 'fixed',
     right: 20,
     bottom: 70,
-    backgroundColor: '#6a1b9a',
+    backgroundColor: '#143d5c',
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -419,12 +419,12 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   filterButtonCancel: {
-    backgroundColor: 'red',
+    backgroundColor: '#ef8016',
     padding: 10,
     borderRadius: 5,
   },
   filterButtonApply: {
-    backgroundColor: 'green',
+    backgroundColor: '#143d5c',
     padding: 10,
     borderRadius: 5,
   },

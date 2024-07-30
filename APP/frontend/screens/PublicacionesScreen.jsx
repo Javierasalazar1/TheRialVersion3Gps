@@ -123,13 +123,7 @@ const PublicacionesScreen = () => {
   };
 
   const reportReasons = [
-    "Contenido inapropiado",
-    "Spam",
-    "Fraude",
-    "Incitación al odio",
-    "Información falsa",
-    "Contenido sexual",
-    "Acoso",
+    "Información errónea",
     "Otro"
   ];
 
@@ -190,7 +184,7 @@ const PublicacionesScreen = () => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#143d5c" />
         <Text style={styles.text}>Cargando publicaciones...</Text>
       </View>
     );
@@ -212,7 +206,7 @@ const PublicacionesScreen = () => {
         keyExtractor={item => item.id}
         onEndReached={fetchMorePublicaciones}
         onEndReachedThreshold={0.5}
-        ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#0000ff" />}
+        ListFooterComponent={loadingMore && <ActivityIndicator size="large" color="#143d5c" />}
         contentContainerStyle={styles.flatlistContent}
       />
 
@@ -232,7 +226,7 @@ const PublicacionesScreen = () => {
                   key={index}
                   style={[
                     styles.reportReasonBox,
-                    selectedReason === reason && { backgroundColor: '#007BFF' }
+                    selectedReason === reason && { backgroundColor: '#ef8016' }
                   ]}
                   onPress={() => setSelectedReason(reason)}
                 >
@@ -262,7 +256,7 @@ const PublicacionesScreen = () => {
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.acceptButton} onPress={handleReport}>
-                <Text style={styles.acceptButtonText}>Enviar Reporte</Text>
+                <Text style={styles.acceptButtonText}>Reportar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -398,7 +392,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   cancelButton: {
-    backgroundColor: 'red',
+    backgroundColor: '#ef8016',
     padding: 10,
     borderRadius: 10,
     alignItems: 'center',
@@ -410,7 +404,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   acceptButton: {
-    backgroundColor: '#007BFF',
+    backgroundColor: '#143d5c',
     padding: 10,
     borderRadius: 10,
     alignItems: 'center',

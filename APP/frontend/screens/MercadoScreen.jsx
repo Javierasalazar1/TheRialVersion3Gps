@@ -248,8 +248,8 @@ const MercadoScreen = () => {
               <Text style={styles.errorText}>Selecciona un motivo antes de enviar el reporte.</Text>
             )}
             <View style={styles.modalButtons}>
-              <Button title="Cancelar" onPress={handleCloseModal} color="red" />
-              <Button title="Enviar" onPress={handleReportSubmit} />
+              <Button title="Cancelar" onPress={handleCloseModal} color="#ef8016" />
+              <Button title="Reportar" onPress={handleReportSubmit} color="#143d5c"/>
             </View>
           </View>
         </View>
@@ -347,6 +347,8 @@ const styles = StyleSheet.create({
   },
   modalButtons: {
     flexDirection: 'row',
+    padding: 10,
+    borderRadius: 20,
     justifyContent: 'space-around',
   },
   reasonsContainer: {
@@ -368,11 +370,11 @@ const styles = StyleSheet.create({
   },
   selectedReportOption: {
     fontWeight: 'bold',
-    color: '#007BFF',
-    backgroundColor: '#e0e0e0',
+    color: '#143d5c',
+    backgroundColor: '#ef8016',
   },
   selectedReportOptionText: {
-    color: '#007BFF',
+    color: '#ffff',
   },
   errorText: {
     fontSize: 18,
