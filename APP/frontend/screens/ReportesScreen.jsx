@@ -88,21 +88,19 @@ const ReportesScreen = ({ navigation }) => {
       <Text style={styles.date}>{item.fecha}</Text>
       <Text style={styles.username}>Publicado por: {item.username}</Text>
       <Text style={styles.likes}>Likes: {item.like}</Text>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity onPress={() => handlePublicationPress(item)} style={styles.detailButton}>
-          <Text style={styles.detailButtonText}>Detalle de Publicación</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleReportDetailPress(item.id)} style={styles.detailButton}>
-          <Text style={styles.detailButtonText}>Detalle del Reporte</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity onPress={() => handlePublicationPress(item)} style={styles.button}>
+        <Text style={styles.buttonText}>Ver Detalle de Publicación</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => handleReportDetailPress(item.id)} style={styles.button}>
+        <Text style={styles.buttonText}>Ver Detalle del Reporte</Text>
+      </TouchableOpacity>
     </View>
   );
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#143d5c" />
+        <ActivityIndicator size="large" color="#0000ff" />
       </View>
     );
   }
@@ -138,7 +136,7 @@ const ReportesScreen = ({ navigation }) => {
               <Text style={styles.modalText}>Fecha: {selectedPublication.fecha}</Text>
               <Text style={styles.modalText}>Likes: {selectedPublication.like}</Text>
               <TouchableOpacity onPress={() => setSelectedPublication(null)} style={styles.closeButton}>
-                <Text style={styles.closeButtonText}>Cerrar</Text>
+                <Text style={styles.buttonText}>Cerrar</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -156,7 +154,7 @@ const ReportesScreen = ({ navigation }) => {
               <Text style={styles.modalText}>Razón: {reportDetail.reason}</Text>
               <Text style={styles.modalText}>Información Adicional: {reportDetail.additionalInfo}</Text>
               <TouchableOpacity onPress={() => setReportDetail(null)} style={styles.closeButton}>
-                <Text style={styles.closeButtonText}>Cerrar</Text>
+                <Text style={styles.buttonText}>Cerrar</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>

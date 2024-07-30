@@ -95,10 +95,14 @@ const InicioScreen = ({ navigation }) => {
     closeMenu();
   };
 
-  const menuHeight = menuAnimation.interpolate({
+  const menuScaleY = menuAnimation.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 150], // Ajusta la altura del menú desplegable según necesites
+    outputRange: [0, 1], // Scale from 0 to 1
   });
+
+  const handleModeracion = () => {
+    navigation.navigate('Moderación');
+  };
 
   return (
     <MenuProvider>
@@ -107,22 +111,12 @@ const InicioScreen = ({ navigation }) => {
         <View style={styles.header}>
           <Text style={styles.headerText}>{selectedScreen}</Text>
           <View style={styles.headerRight}>
-            <Menu>
-              <MenuTrigger customStyles={triggerStyles}>
-                <View style={styles.menuButton}>
-                  <Ionicons name="flower-sharp" size={24} color="white" />
-                  <Text style={styles.TextMenu}>Menú</Text>
-                </View>
-              </MenuTrigger>
-              <MenuOptions customStyles={optionsStyles}>
-                <MenuOption onSelect={() => navigation.navigate('Moderación')}>
-                  <Text style={styles.menuOptionText}>Moderar</Text>
-                </MenuOption>
-                <MenuOption onSelect={() => navigation.navigate('Reportes')}>
-                  <Text style={styles.menuOptionText}>Reportes</Text>
-                </MenuOption>
-              </MenuOptions>
-            </Menu>
+          <TouchableOpacity onPress={handleModeracion} style={styles.moderacionButton}>
+            <View style={styles.moderacionContent}>
+              <Ionicons name="flower-sharp" size={24} color="white" />
+              <Text style={styles.textModeracion}>Moderación</Text>
+            </View>
+            </TouchableOpacity>
             <Menu>
               <MenuTrigger>
                 <Image source={require('../assets/user.png')} style={styles.profileIcon} />
@@ -143,7 +137,7 @@ const InicioScreen = ({ navigation }) => {
           <FontAwesome5 name="plus" size={24} color="white" />
         </TouchableOpacity>
         {/* Animated Menu */}
-        <Animated.View style={[styles.menuContainer, { height: menuHeight }]}>
+        <Animated.View style={[styles.menuContainer, { transform: [{ scaleY: menuScaleY }] }]}>
           <TouchableOpacity style={styles.menuItem} onPress={() => navigateToScreen('Crear Aviso')}>
             <Text style={styles.menuText}>Avisos</Text>
           </TouchableOpacity>
@@ -170,7 +164,6 @@ const InicioScreen = ({ navigation }) => {
     </MenuProvider>
   );
 };
-
 const triggerStyles = {
   triggerWrapper: {
     flexDirection: 'row',
@@ -249,100 +242,73 @@ const styles = StyleSheet.create({
   postActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 10,
+    marginVertical: 10,
+  },
+  postButton: {
+    backgroundColor: '#143d5c',
+    padding: 10,
+    borderRadius: 5,
+  },
+  postButtonText: {
+    color: 'white',
   },
   fab: {
-    position: 'fixed',
-    right: 20,
-    bottom: 70,
+    position: 'absolute',
+    bottom: 50,
+    right: 10,
     backgroundColor: '#143d5c',
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: 'center',
-    elevation: 8,
-    zIndex: 8,
-  },
-  filterModal: {
-    flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  filterContainer: {
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 10,
-    width: '80%',
-  },
-  filterTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    marginTop: 5,
-  },
-
-  menuOptionText: {
-    fontSize: 16,
-  },
-
-  filterButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 20,
-  },
-  filterButtonCancel: {
-    backgroundColor: '#ef8016',
-    padding: 10,
-    borderRadius: 5,
-  },
-  filterButtonApply: {
-    backgroundColor: '#143d5c',
-    padding: 10,
-    borderRadius: 5,
-  },
-  filterButtonText: {
-    color: 'white',
-    fontSize: 16,
-  },
-  filterPicker:{
-    fontSize: 10,
   },
   menuContainer: {
-    position: 'fixed',
+    position: 'absolute',
+    bottom: 100,
     right: 20,
-    bottom: 130,
-    backgroundColor: '#fff',
-    width: 120,
+    backgroundColor: 'white',
     borderRadius: 10,
-    overflow: 'hidden',
+    width: 150,
     elevation: 5,
-    paddingHorizontal: 10,
-    zIndex: 8,
+    overflow: 'hidden',
   },
   menuItem: {
-    paddingVertical: 12,
-    alignItems: 'center',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
   },
   menuText: {
     fontSize: 16,
   },
   footer: {
-    position: 'fixed',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    marginBottom: 0,
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingVertical: 10,
-    borderTopWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#fff',
-    elevation: 8,
-    zIndex: 8,
+    backgroundColor: '#e5e5e5',
   },
+  menuOptionText: {
+    fontSize: 16,
+    padding: 10,
+  },
+  moderacionButton: {
+    backgroundColor: '#143d5c', // O el color que prefieras
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginRight: 10,
+  },
+  moderacionContent: {
+    // flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  textModeracion: {
+    color: 'white',
+    marginLeft: 0,
+    fontSize: 13,
+    fontWeight: 'bold',
+  }
 });
 
 export default InicioScreen;

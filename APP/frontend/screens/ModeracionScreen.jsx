@@ -2,15 +2,13 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 const ModeracionScreen = () => {
-  const handleRequestEdit = () => {
-    Toast.show({
-      type: 'info',
-      text1: 'Coming soon...',
-      icon: <Ionicons name="construct-outline" size={80} color="black" />,
-      position: 'top',
-    });
+  const navigation = useNavigation();
+
+  const handleViewReports = () => {
+    navigation.navigate('Reportes');
   };
 
   const handleDeletePost = () => {
@@ -33,18 +31,18 @@ const ModeracionScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Ionicons name="build-outline" size={120} color="#007BFF" style={styles.icon} />
+      <Ionicons name="build-outline" size={120} color="#143d5c" style={styles.icon} />
       <Text style={styles.text}>Moderación</Text>
 
-      <TouchableOpacity style={styles.button} onPress={handleRequestEdit}>
-        <Text style={styles.buttonText}>Solicitar Edición de Publicación</Text>
+      <TouchableOpacity style={[styles.button, { backgroundColor: '#143d5c' }]} onPress={handleViewReports}>
+        <Text style={styles.buttonText}>Ver Reportes</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={[styles.button, { backgroundColor: '#FF6347' }]} onPress={handleDeletePost}>
+      <TouchableOpacity style={[styles.button, { backgroundColor: '#ef8016' }]} onPress={handleDeletePost}>
         <Text style={styles.buttonText}>Eliminar Publicación</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={[styles.button, { backgroundColor: '#FF6347' }]} onPress={handleSanctionUser}>
+      <TouchableOpacity style={[styles.button, { backgroundColor: '#ef8016' }]} onPress={handleSanctionUser}>
         <Text style={styles.buttonText}>Sancionar Usuario</Text>
       </TouchableOpacity>
 
@@ -52,6 +50,7 @@ const ModeracionScreen = () => {
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
