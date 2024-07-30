@@ -514,7 +514,7 @@ const MercadoScreen = () => {
               ))}
             </Picker>
             <View style={styles.imagePickerContainer}>
-              <Button title="Seleccionar Imagen" onPress={handleImagePicker} />
+              <Button title="Seleccionar Imagen" onPress={handleImagePicker} color="#143d5c"/>
               {selectedImage && (
                 <Image source={{ uri: selectedImage.uri }} style={styles.selectedImage} />
               )}
@@ -534,8 +534,8 @@ const MercadoScreen = () => {
               color="red"
             />
             <View style={styles.modalButtons}>
-              <Button title="Cancelar" onPress={() => setEditModalVisible(false)} color="red" />
-              <Button title="Guardar" onPress={handleUpdatePost} />
+              <Button title="Cancelar" onPress={() => setEditModalVisible(false)} color="#ef8016" />
+              <Button title="Guardar" onPress={handleUpdatePost} color="#143d5c"/>
             </View>
           </View>
         </View>
