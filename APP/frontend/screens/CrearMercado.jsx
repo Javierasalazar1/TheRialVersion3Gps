@@ -154,8 +154,9 @@ const CrearMercado = () => {
         maxLength={300} // Limite de 300 caracteres
         multiline
       />
-      <View style={styles.input}>
+ 
         <Picker
+          style={styles.input}
           selectedValue={categoria}
           onValueChange={(itemValue, itemIndex) => setCategoria(itemValue)}
         >
@@ -164,7 +165,6 @@ const CrearMercado = () => {
             <Picker.Item key={index} label={cat} value={cat} />
           ))}
         </Picker>
-      </View>
       <TextInput
         style={styles.input}
         placeholder="Precio"
