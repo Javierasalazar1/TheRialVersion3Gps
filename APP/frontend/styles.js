@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     flatlistContent: {
-        paddingBottom: 50, // Ajusta este valor según el tamaño de tu barra de navegación en InicioScreen
+        paddingBottom: 50,
     },
     flagIcon: {
         alignSelf: 'flex-end',
@@ -91,10 +91,6 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         padding: 20,
         alignItems: 'center',
-        marginLeft: 'auto',
-        marginRight: 'auto',
-        marginTop: 'auto',
-        marginBottom: 'auto',
     },
     modalContent: {
         backgroundColor: '#fff',
@@ -106,6 +102,10 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 20,
+    },
+    modalText: {
+        fontSize: 16,
+        marginBottom: 10,
     },
     reportContainer: {
         flexDirection: 'row',
@@ -129,52 +129,61 @@ const styles = StyleSheet.create({
         padding: 10,
         marginVertical: 10,
         height: 100,
-        width: '80%', // Ajusta el ancho según tus necesidades
+        width: '80%',
         textAlignVertical: 'top',
     },
     buttonContainer: {
         flexDirection: 'row',
-        justifyContent: 'center',
+        justifyContent: 'space-between',
         marginTop: 10,
         width: '100%',
     },
     detailButton: {
-      backgroundColor: '#ef8016',
-      padding: 10,
-      borderRadius: 10,
-      marginHorizontal: 7,
-      width: '45%',
-  },
-  detailButtonText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: 'bold',
-    justifyContent: 'center',
-},
-    cancelButton: {
+        backgroundColor: '#143d5c',
+        padding: 10,
+        borderRadius: 10,
+        width: '48%',
+    },
+    ignoreButton: {
+        backgroundColor: '#4CAF50',
+        padding: 10,
+        borderRadius: 10,
+        width: '48%',
+    },
+    deleteButton: {
+        backgroundColor: '#f44336',
+        padding: 10,
+        borderRadius: 10,
+        width: '48%',
+    },
+    disabledButton: {
+        opacity: 0.5,
+    },
+    detailButtonText: {
+        color: 'white',
+        fontSize: 12,
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    closeButton: {
         backgroundColor: '#ef8016',
         padding: 10,
         borderRadius: 10,
         alignItems: 'center',
         width: '40%',
+        marginTop: 10,
     },
-    closeButton: {
-      backgroundColor: '#ef8016',
-      padding: 10,
-      borderRadius: 10,
-      alignItems: 'center',
-      width: '40%',
-      marginTop: 10,
-  },
-  closeButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-},
-    cancelButtonText: {
+    closeButtonText: {
         color: 'white',
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    cancelButton: {
+        backgroundColor: '#ef8016',
+        padding: 10,
+        borderRadius: 10,
+        width: '48%',
+        marginTop: 10,
     },
     acceptButton: {
         backgroundColor: '#143d5c',
@@ -250,8 +259,16 @@ const styles = StyleSheet.create({
     selectedReportOptionText: {
         color: 'white',
     },
+    username: {
+        fontSize: 14,
+        color: 'gray',
+        marginBottom: 5,
+    },
+    likes: {
+        fontSize: 14,
+        color: 'gray',
+        marginBottom: 10,
+    },
 });
 
-    
-    export default styles;
-
+export default styles;
