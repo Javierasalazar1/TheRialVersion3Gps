@@ -356,7 +356,6 @@ const MercadoScreen = () => {
           <TouchableOpacity onPress={() => handleReportItem(item.id)}>
             <Ionicons name="flag-outline" size={24} color="red" style={styles.reportIcon} />
           </TouchableOpacity>
-
           <TouchableOpacity onPress={() => handleOpenOptions(item.id)}>
             <Ionicons name="ellipsis-vertical" size={24} color="black" />
           </TouchableOpacity>
@@ -515,7 +514,7 @@ const MercadoScreen = () => {
               ))}
             </Picker>
             <View style={styles.imagePickerContainer}>
-              <Button title="Seleccionar Imagen" onPress={handleImagePicker} />
+              <Button title="Seleccionar Imagen" onPress={handleImagePicker} color="#143d5c"/>
               {selectedImage && (
                 <Image source={{ uri: selectedImage.uri }} style={styles.selectedImage} />
               )}
@@ -535,8 +534,8 @@ const MercadoScreen = () => {
               color="red"
             />
             <View style={styles.modalButtons}>
-              <Button title="Cancelar" onPress={() => setEditModalVisible(false)} color="red" />
-              <Button title="Guardar" onPress={handleUpdatePost} />
+              <Button title="Cancelar" onPress={() => setEditModalVisible(false)} color="#ef8016" />
+              <Button title="Guardar" onPress={handleUpdatePost} color="#143d5c"/>
             </View>
           </View>
         </View>
